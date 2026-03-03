@@ -223,7 +223,7 @@ function Navigation({ navigate, currentPage, openModal }) {
     { id:"trends",    label:"Trends" },
     { id:"seasonal",  label:"Seasonal" },
     { id:"ethics",    label:"Ethics" },
-    { id:"api",       label:"API" },
+    { id:"methodology", label:"Methodology" },
   ];
 
   return (
@@ -1598,7 +1598,7 @@ function Footer({ navigate, openModal }) {
       padding:`2.5rem ${bp==="mobile"?"1.25rem":"0"}`,
       background:T.surface, marginTop:"4rem" }}>
       <div style={{ display:"grid",
-        gridTemplateColumns:bp==="mobile"?"1fr":bp==="tablet"?"1fr 1fr":"2fr 1fr 1fr",
+        gridTemplateColumns:bp==="mobile"?"1fr":bp==="tablet"?"1fr 1fr":"2fr 1fr 1fr 1fr",
         gap:bp==="mobile"?"2rem":"2.5rem", marginBottom:"2rem" }}>
         <div>
           <div style={{ fontFamily:"'Playfair Display',serif", fontSize:"1.4rem",
@@ -1635,6 +1635,21 @@ function Footer({ navigate, openModal }) {
           {["Privacy Policy","Anonymity Framework","Data Methodology","Research Access"].map(l => (
             <div key={l} style={{ fontFamily:"DM Mono", fontSize:"0.58rem",
               color:T.muted, marginBottom:"0.4rem", cursor:"pointer" }}>{l}</div>
+          ))}
+        </div>
+        <div>
+          <div style={{ fontFamily:"DM Mono", fontSize:"0.52rem", letterSpacing:"0.14em",
+            textTransform:"uppercase", color:T.muted, marginBottom:"0.75rem" }}>Documentation</div>
+          {[
+            {label:"API Reference", url:"#"},
+            {label:"Data Access", url:"#"},
+            {label:"Research Portal", url:"#"},
+            {label:"Contact Us", url:"#"}
+          ].map(l => (
+            <div key={l.label} style={{ fontFamily:"DM Mono", fontSize:"0.58rem",
+              color:T.muted, marginBottom:"0.4rem", cursor:"pointer", transition:"color 0.2s" }}
+              onMouseEnter={e=>e.target.style.color=T.text}
+              onMouseLeave={e=>e.target.style.color=T.muted}>{l.label}</div>
           ))}
         </div>
       </div>
