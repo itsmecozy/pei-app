@@ -1283,7 +1283,7 @@ function TrendsPage() {
                   }
                 </p>
                 <div style={{ fontFamily:"DM Mono", fontSize:"0.5rem", color:T.muted, marginTop:"0.3rem" }}>
-                  Computed from real submissions · Week {national?.week_number || "—"}, {new Date().getFullYear()}
+                  Computed from real submissions · {new Date().toLocaleDateString("en-PH", { month:"long", year:"numeric" })}
                 </div>
               </div>
             </div>
