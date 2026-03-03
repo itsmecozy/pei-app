@@ -1,0 +1,329 @@
+// ─── PEI AGGREGATION FUNCTION ────────────────────────────────────────────────
+// Computes ESI, HDR, Velocity for all LGUs from raw submissions
+// Called daily via Supabase cron or manually via HTTP
+
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+// ─── CONSTANTS ────────────────────────────────────────────────────────────────
+const MIN_THRESHOLD = 50;
+const PERIODS = ["7d", "30d", "90d"] as const;
+type Period = typeof PERIODS[number];
+
+const PERIOD_DAYS: Record<Period, number> = {
+  "7d":  7,
+  "30d": 30,
+  "90d": 90,
+};
+
+const HOPE_EMOTIONS    = ["hope", "relief", "determination"];
+const DESPAIR_EMOTIONS = ["grief", "anger", "anxiety", "regret", "longing"];
+const ALL_EMOTIONS     = [...HOPE_EMOTIONS, ...DESPAIR_EMOTIONS];
+
+// ─── MATH HELPERS ─────────────────────────────────────────────────────────────
+
+// ESI = Emotional Stability Index
+// Based on normalized Shannon entropy — higher = more emotionally diverse = more stable
+function computeESI(dist: Record<string, number>): number {
+  const values = Object.values(dist).filter(v => v > 0);
+  if (values.length === 0) return 0;
+
+  const entropy = values.reduce((sum, p) => {
+    return sum - (p * Math.log(p));
+  }, 0);
+
+  const maxEntropy = Math.log(8); // 8 possible emotions
+  return Math.min(Math.round((entropy / maxEntropy) * 1000) / 1000, 1);
+}
+
+// HDR = Hope / Despair Ratio
+// > 1.0 = hope-leaning, < 1.0 = despair-leaning
+function computeHDR(dist: Record<string, number>): number {
+  const hopeSum   = HOPE_EMOTIONS.reduce((s, e) => s + (dist[e] || 0), 0);
+  const despairSum = DESPAIR_EMOTIONS.reduce((s, e) => s + (dist[e] || 0), 0);
+
+  if (despairSum === 0) return hopeSum > 0 ? 3.0 : 1.0; // all hope, cap at 3.0
+  return Math.round((hopeSum / despairSum) * 1000) / 1000;
+}
+
+// Emotion distribution — returns proportions (0–1) for each emotion
+function computeDistribution(
+  submissions: { emotion: string }[]
+): Record<string, number> {
+  const total = submissions.length;
+  if (total === 0) return {};
+
+  const counts: Record<string, number> = {};
+  ALL_EMOTIONS.forEach(e => counts[e] = 0);
+
+  submissions.forEach(s => {
+    if (counts[s.emotion] !== undefined) {
+      counts[s.emotion]++;
+    }
+  });
+
+  const dist: Record<string, number> = {};
+  ALL_EMOTIONS.forEach(e => {
+    if (counts[e] > 0) {
+      dist[e] = Math.round((counts[e] / total) * 1000) / 1000;
+    }
+  });
+
+  return dist;
+}
+
+// Dominant emotion — the one with the highest percentage
+function getDominantEmotion(dist: Record<string, number>): string {
+  return Object.entries(dist).sort((a, b) => b[1] - a[1])[0]?.[0] || "unknown";
+}
+
+// Get date range for a period
+function getDateRange(periodDays: number): { from: string; to: string } {
+  const to   = new Date();
+  const from = new Date();
+  from.setDate(from.getDate() - periodDays);
+  return {
+    from: from.toISOString(),
+    to:   to.toISOString(),
+  };
+}
+
+// Get date range for the PREVIOUS equivalent period (for velocity calculation)
+function getPreviousDateRange(periodDays: number): { from: string; to: string } {
+  const to   = new Date();
+  const from = new Date();
+  to.setDate(to.getDate() - periodDays);
+  from.setDate(from.getDate() - periodDays * 2);
+  return {
+    from: from.toISOString(),
+    to:   to.toISOString(),
+  };
+}
+
+// Get current week number
+function getWeekNumber(): number {
+  const d = new Date();
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+}
+
+// ─── MAIN HANDLER ─────────────────────────────────────────────────────────────
+Deno.serve(async (req: Request) => {
+
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
+  // Require service role key for aggregation — this should never be called by public
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader) {
+    return new Response(
+      JSON.stringify({ error: "Unauthorized" }),
+      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+  );
+
+  try {
+    const results = {
+      lgus_processed:  0,
+      lgus_visible:    0,
+      lgus_below_threshold: 0,
+      national:        {} as Record<Period, object>,
+      errors:          [] as string[],
+    };
+
+    // ─── FETCH ALL ACTIVE LGUs ────────────────────────────────────────────────
+    const { data: lgus, error: lguError } = await supabase
+      .from("lgus")
+      .select("id, name, region_id")
+      .eq("active", true)
+      .limit(2000);
+
+    if (lguError || !lgus) {
+      throw new Error(`Failed to fetch LGUs: ${lguError?.message}`);
+    }
+
+    // ─── PROCESS EACH PERIOD ──────────────────────────────────────────────────
+    for (const period of PERIODS) {
+      const periodDays   = PERIOD_DAYS[period];
+      const { from, to } = getDateRange(periodDays);
+      const { from: prevFrom, to: prevTo } = getPreviousDateRange(periodDays);
+
+      // Fetch ALL submissions for this period in one query (more efficient)
+      const { data: allSubmissions, error: subError } = await supabase
+        .from("submissions")
+        .select("lgu_id, emotion, intensity")
+        .gte("submitted_at", from)
+        .lte("submitted_at", to);
+
+      if (subError) {
+        results.errors.push(`Period ${period}: ${subError.message}`);
+        continue;
+      }
+
+      // Fetch previous period submissions (for velocity)
+      const { data: prevSubmissions } = await supabase
+        .from("submissions")
+        .select("lgu_id, emotion")
+        .gte("submitted_at", prevFrom)
+        .lte("submitted_at", prevTo);
+
+      // Group submissions by LGU
+      const byLgu: Record<string, { emotion: string; intensity: number }[]> = {};
+      const prevByLgu: Record<string, { emotion: string }[]> = {};
+
+      (allSubmissions || []).forEach(s => {
+        if (!byLgu[s.lgu_id]) byLgu[s.lgu_id] = [];
+        byLgu[s.lgu_id].push(s);
+      });
+
+      (prevSubmissions || []).forEach(s => {
+        if (!prevByLgu[s.lgu_id]) prevByLgu[s.lgu_id] = [];
+        prevByLgu[s.lgu_id].push(s);
+      });
+
+      // ─── AGGREGATE EACH LGU ───────────────────────────────────────────────
+      for (const lgu of lgus) {
+        const subs     = byLgu[lgu.id] || [];
+        const prevSubs = prevByLgu[lgu.id] || [];
+        const count    = subs.length;
+        const meetsThreshold = count >= MIN_THRESHOLD;
+
+        if (period === "7d") results.lgus_processed++;
+
+        let aggregation: Record<string, unknown> = {
+          lgu_id:           lgu.id,
+          period,
+          computed_at:      new Date().toISOString(),
+          submission_count: count,
+          meets_threshold:  meetsThreshold,
+          emotion_dist:     {},
+          esi:              null,
+          hdr:              null,
+          velocity:         null,
+          dominant_emotion: null,
+          narrative:        null,
+          drift_note:       null,
+        };
+
+        if (meetsThreshold) {
+          const dist     = computeDistribution(subs);
+          const prevDist = prevSubs.length >= MIN_THRESHOLD
+            ? computeDistribution(prevSubs)
+            : null;
+
+          const esi      = computeESI(dist);
+          const prevESI  = prevDist ? computeESI(prevDist) : null;
+          const velocity = prevESI !== null
+            ? Math.round((esi - prevESI) * 1000) / 1000
+            : null;
+
+          const hdr      = computeHDR(dist);
+          const dominant = getDominantEmotion(dist);
+
+          aggregation = {
+            ...aggregation,
+            emotion_dist:     dist,
+            esi,
+            hdr,
+            velocity,
+            dominant_emotion: dominant,
+          };
+
+          if (period === "7d") results.lgus_visible++;
+        } else {
+          if (period === "7d") results.lgus_below_threshold++;
+        }
+
+        // Upsert aggregation (insert or update)
+        const { error: upsertError } = await supabase
+          .from("lgu_aggregations")
+          .upsert(aggregation, { onConflict: "lgu_id,period" });
+
+        if (upsertError) {
+          results.errors.push(`LGU ${lgu.name} ${period}: ${upsertError.message}`);
+        }
+      }
+
+      // ─── NATIONAL AGGREGATION ─────────────────────────────────────────────
+      const allSubs  = allSubmissions || [];
+      const prevSubs = prevSubmissions || [];
+
+      if (allSubs.length > 0) {
+        const natDist     = computeDistribution(allSubs);
+        const prevNatDist = prevSubs.length > 0 ? computeDistribution(prevSubs) : null;
+
+        const natESI     = computeESI(natDist);
+        const prevNatESI = prevNatDist ? computeESI(prevNatDist) : null;
+        const natVelocity = prevNatESI !== null
+          ? Math.round((natESI - prevNatESI) * 1000) / 1000
+          : null;
+
+        const natHDR      = computeHDR(natDist);
+        const natDominant = getDominantEmotion(natDist);
+        const activeLgus  = Object.keys(byLgu).filter(
+          id => (byLgu[id]?.length || 0) >= MIN_THRESHOLD
+        ).length;
+
+        const weekNum = getWeekNumber();
+        const year    = new Date().getFullYear();
+
+        await supabase
+          .from("national_aggregations")
+          .upsert({
+            period,
+            week_number:      weekNum,
+            year,
+            computed_at:      new Date().toISOString(),
+            submission_count: allSubs.length,
+            active_lgus:      activeLgus,
+            emotion_dist:     natDist,
+            esi:              natESI,
+            hdr:              natHDR,
+            velocity:         natVelocity,
+            dominant_emotion: natDominant,
+          }, { onConflict: "period,week_number,year" });
+
+        results.national[period] = {
+          submissions: allSubs.length,
+          esi:         natESI,
+          hdr:         natHDR,
+          dominant:    natDominant,
+          active_lgus: activeLgus,
+        };
+      }
+    }
+
+    // ─── CLEAN UP OLD RATE LIMITS ─────────────────────────────────────────────
+    // Delete rate limit records older than 2 days — they're useless after salt rotation
+    const twoDaysAgo = new Date();
+    twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+    await supabase
+      .from("rate_limits")
+      .delete()
+      .lt("date_bucket", twoDaysAgo.toISOString().split("T")[0]);
+
+    return new Response(
+      JSON.stringify({ success: true, ...results }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+
+  } catch (err) {
+    console.error("Aggregation error:", err);
+    return new Response(
+      JSON.stringify({ error: String(err) }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+});
