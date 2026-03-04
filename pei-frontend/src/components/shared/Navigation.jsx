@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { T } from "../../constants/tokens";
 import { useBreakpoint } from "../../hooks/useBreakpoint";
 
-export default function Navigation({ navigate, currentPage, openModal }) {
+export default function Navigation({ navigate, currentPage, openModal, user, onAccountClick }) {
   const bp = useBreakpoint();
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
@@ -20,6 +20,8 @@ export default function Navigation({ navigate, currentPage, openModal }) {
     { id:"methodology", label:"Methodology" },
   ];
 
+  const initial = user?.email?.[0]?.toUpperCase() || "?";
+
   return (
     <>
       <nav style={{
@@ -30,6 +32,8 @@ export default function Navigation({ navigate, currentPage, openModal }) {
         transition:"all 0.3s"
       }}>
         <div style={{ display:"flex", alignItems:"center", height:60, padding:"0 1.25rem", gap:"0.75rem" }}>
+
+          {/* Logo */}
           <div style={{ display:"flex", alignItems:"center", gap:"0.5rem", flexShrink:0 }}>
             <span style={{ fontFamily:"'Playfair Display',serif", fontSize:"1.3rem",
               fontWeight:900, color:T.amber, cursor:"pointer", letterSpacing:"-0.02em" }}
@@ -50,6 +54,7 @@ export default function Navigation({ navigate, currentPage, openModal }) {
             </div>
           </div>
 
+          {/* Nav links */}
           <div style={{ display:"flex", alignItems:"center", gap:"0.1rem",
             flex:1, overflowX:"auto", msOverflowStyle:"none", scrollbarWidth:"none" }}>
             {navItems.map(n => {
@@ -79,18 +84,44 @@ export default function Navigation({ navigate, currentPage, openModal }) {
             })}
           </div>
 
-          <button onClick={openModal} style={{
-            flexShrink:0, background:T.amber, color:"#000", border:"none",
-            padding: bp === "mobile" ? "0.32rem 0.6rem" : "0.38rem 0.9rem",
-            fontFamily:"DM Mono",
-            fontSize: bp === "mobile" ? "0.54rem" : "0.58rem",
-            fontWeight:500, letterSpacing:"0.08em", textTransform:"uppercase",
-            cursor:"pointer", transition:"all 0.2s"
-          }}
-            onMouseEnter={e=>e.currentTarget.style.background="#fff"}
-            onMouseLeave={e=>e.currentTarget.style.background=T.amber}>
-            {bp === "mobile" ? "+" : "Submit Feeling"}
-          </button>
+          {/* Right side: Submit + Account */}
+          <div style={{ display:"flex", alignItems:"center", gap:"0.5rem", flexShrink:0 }}>
+            <button onClick={openModal} style={{
+              background:T.amber, color:"#000", border:"none",
+              padding: bp === "mobile" ? "0.32rem 0.6rem" : "0.38rem 0.9rem",
+              fontFamily:"DM Mono",
+              fontSize: bp === "mobile" ? "0.54rem" : "0.58rem",
+              fontWeight:500, letterSpacing:"0.08em", textTransform:"uppercase",
+              cursor:"pointer", transition:"all 0.2s"
+            }}
+              onMouseEnter={e=>e.currentTarget.style.background="#fff"}
+              onMouseLeave={e=>e.currentTarget.style.background=T.amber}>
+              {bp === "mobile" ? "+" : "Submit Feeling"}
+            </button>
+
+            {/* Account avatar */}
+            <button onClick={onAccountClick}
+              title={user ? `${user.email} · Personal Index` : "Sign in"}
+              style={{
+                width:30, height:30, borderRadius:"50%", border:"none",
+                background: user
+                  ? `linear-gradient(135deg, ${T.amber}, ${T.teal})`
+                  : T.surface2,
+                display:"flex", alignItems:"center", justifyContent:"center",
+                cursor:"pointer", flexShrink:0, transition:"all 0.2s",
+                outline: currentPage === "personal" ? `2px solid ${T.amber}` : "none",
+                outlineOffset:2,
+              }}
+              onMouseEnter={e=>e.currentTarget.style.opacity="0.8"}
+              onMouseLeave={e=>e.currentTarget.style.opacity="1"}>
+              {user ? (
+                <span style={{ fontFamily:"DM Mono", fontSize:"0.6rem",
+                  fontWeight:700, color:"#000" }}>{initial}</span>
+              ) : (
+                <span style={{ color:T.muted, fontSize:"0.7rem" }}>◌</span>
+              )}
+            </button>
+          </div>
         </div>
       </nav>
       <style>{`
