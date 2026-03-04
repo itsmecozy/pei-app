@@ -4,7 +4,7 @@ import { T } from "../../constants/tokens";
 import { EMOTIONS } from "../../constants/emotions";
 import { useBreakpoint } from "../../hooks/useBreakpoint";
 
-export default function SubmissionModal({ open, onClose }) {
+export default function SubmissionModal({ open, onClose, onSuccess }) {
   const [step, setStep]             = useState(1);
   const [query, setQuery]           = useState("");
   const [lguResults, setLguResults] = useState([]);
@@ -49,8 +49,9 @@ export default function SubmissionModal({ open, onClose }) {
         text: text.trim() || undefined,
       });
       if (result.acknowledged) {
-        setDone(true);
-        setTimeout(handleClose, 2800);
+  setDone(true);
+  if (onSuccess) onSuccess({ emotion, intensity, lgu_id: selectedLgu.id });
+  setTimeout(handleClose, 2800);
       } else {
         setError(result.error || "Something went wrong. Please try again.");
       }
