@@ -223,7 +223,7 @@ function Navigation({ navigate, currentPage, openModal }) {
     { id:"trends",    label:"Trends" },
     { id:"seasonal",  label:"Seasonal" },
     { id:"ethics",    label:"Ethics" },
-    { id:"api",       label:"API" },
+    { id:"methodology", label:"Methodology" },
   ];
 
   return (
@@ -330,6 +330,7 @@ function SubmissionModal({ open, onClose }) {
   };
   const handleClose = () => { onClose(); setTimeout(reset, 400); };
 
+  // LGU search
   useEffect(() => {
     if (query.length < 2) { setLguResults([]); return; }
     const t = setTimeout(async () => {
@@ -380,6 +381,7 @@ function SubmissionModal({ open, onClose }) {
         animation:bp==="mobile"?"slideUp 0.3s ease":"modalIn 0.3s ease",
         borderRadius:bp==="mobile"?"16px 16px 0 0":"0" }}>
 
+        {/* Header */}
         <div style={{ padding:"1.25rem 1.5rem", borderBottom:`1px solid ${T.border}`,
           display:"flex", alignItems:"baseline", justifyContent:"space-between" }}>
           <span style={{ fontFamily:"'Playfair Display',serif", fontSize:"1.2rem", fontWeight:700 }}>
@@ -389,6 +391,7 @@ function SubmissionModal({ open, onClose }) {
             color:T.muted, cursor:"pointer", fontSize:"1.1rem" }}>✕</button>
         </div>
 
+        {/* Body */}
         <div style={{ padding:"1.25rem 1.5rem" }}>
           {done ? (
             <div style={{ textAlign:"center", padding:"1.75rem 0" }}>
@@ -402,6 +405,7 @@ function SubmissionModal({ open, onClose }) {
             </div>
           ) : (
             <>
+              {/* Step 1 — LGU Search */}
               {step === 1 && (
                 <div>
                   <label style={{ fontFamily:"DM Mono", fontSize:"0.58rem",
@@ -409,18 +413,25 @@ function SubmissionModal({ open, onClose }) {
                     color:T.muted, display:"block", marginBottom:"0.6rem" }}>
                     Search your city or municipality
                   </label>
-                  <input type="text" value={query} onChange={e => setQuery(e.target.value)}
+                  <input
+                    type="text"
+                    value={query}
+                    onChange={e => setQuery(e.target.value)}
                     placeholder="Type a city or municipality name..."
                     style={{ width:"100%", background:T.bg, border:`1px solid ${T.border}`,
                       color:T.text, padding:"0.7rem 0.9rem", fontFamily:"DM Mono",
-                      fontSize:"0.72rem", outline:"none", boxSizing:"border-box", marginBottom:"0.5rem" }}
+                      fontSize:"0.72rem", outline:"none", boxSizing:"border-box",
+                      marginBottom:"0.5rem" }}
                     onFocus={e=>e.target.style.borderColor=T.amber}
                     onBlur={e=>e.target.style.borderColor=T.border}
-                    autoFocus />
+                    autoFocus
+                  />
+
                   {searching && (
                     <div style={{ fontFamily:"DM Mono", fontSize:"0.56rem",
                       color:T.muted, padding:"0.5rem 0" }}>Searching...</div>
                   )}
+
                   {lguResults.length > 0 && (
                     <div style={{ border:`1px solid ${T.border}`, maxHeight:200,
                       overflowY:"auto", marginBottom:"0.5rem" }}>
@@ -433,7 +444,9 @@ function SubmissionModal({ open, onClose }) {
                             transition:"background 0.15s" }}
                           onMouseEnter={e=>e.currentTarget.style.background=T.surface2}
                           onMouseLeave={e=>e.currentTarget.style.background=selectedLgu?.id===lgu.id?T.surface2:"none"}>
-                          <div style={{ fontFamily:"DM Mono", fontSize:"0.62rem", color:T.text }}>{lgu.name}</div>
+                          <div style={{ fontFamily:"DM Mono", fontSize:"0.62rem", color:T.text }}>
+                            {lgu.name}
+                          </div>
                           <div style={{ fontFamily:"DM Mono", fontSize:"0.5rem", color:T.muted, marginTop:"0.15rem" }}>
                             {lgu.lgu_type === "city" ? "City" : "Municipality"} · {lgu.province} · {lgu.region}
                           </div>
@@ -441,6 +454,7 @@ function SubmissionModal({ open, onClose }) {
                       ))}
                     </div>
                   )}
+
                   {selectedLgu && (
                     <div style={{ background:`${T.amber}08`, border:`1px solid ${T.amber}20`,
                       padding:"0.6rem 0.7rem", fontFamily:"DM Mono", fontSize:"0.56rem",
@@ -449,6 +463,7 @@ function SubmissionModal({ open, onClose }) {
                       {selectedLgu.name}, {selectedLgu.province}
                     </div>
                   )}
+
                   <div style={{ marginTop:"0.75rem", background:`${T.teal}08`,
                     border:`1px solid ${T.teal}15`, padding:"0.6rem 0.7rem",
                     fontFamily:"DM Mono", fontSize:"0.54rem", color:T.muted }}>
@@ -457,6 +472,7 @@ function SubmissionModal({ open, onClose }) {
                 </div>
               )}
 
+              {/* Step 2 — Emotion */}
               {step === 2 && (
                 <div>
                   <label style={{ fontFamily:"DM Mono", fontSize:"0.58rem",
@@ -479,6 +495,7 @@ function SubmissionModal({ open, onClose }) {
                       </div>
                     ))}
                   </div>
+
                   <label style={{ fontFamily:"DM Mono", fontSize:"0.58rem",
                     letterSpacing:"0.12em", textTransform:"uppercase",
                     color:T.muted, display:"block", marginBottom:"0.6rem" }}>
@@ -494,7 +511,8 @@ function SubmissionModal({ open, onClose }) {
                     {[1,2,3,4,5].map(n => (
                       <button key={n} onClick={()=>setIntensity(n)}
                         style={{ position:"absolute", left:`${((n-1)/4)*100}%`,
-                          transform:"translateX(-50%)", width:18, height:18, borderRadius:"50%",
+                          transform:"translateX(-50%)", width:18, height:18,
+                          borderRadius:"50%",
                           border:`2px solid ${n<=intensity?T.amber:T.border}`,
                           background:n<=intensity?T.amber:T.bg,
                           cursor:"pointer", transition:"all 0.2s" }} />
@@ -507,6 +525,7 @@ function SubmissionModal({ open, onClose }) {
                 </div>
               )}
 
+              {/* Step 3 — Optional text */}
               {step === 3 && (
                 <div>
                   <label style={{ fontFamily:"DM Mono", fontSize:"0.58rem",
@@ -545,6 +564,7 @@ function SubmissionModal({ open, onClose }) {
           )}
         </div>
 
+        {/* Footer */}
         {!done && (
           <div style={{ padding:"0.9rem 1.5rem", borderTop:`1px solid ${T.border}`,
             display:"flex", alignItems:"center", justifyContent:"space-between" }}>
@@ -629,7 +649,7 @@ function HomePage({ navigate, openModal }) {
     { id:"trends",    label:"Trends",    icon:"↗", desc:"Velocity charts tracking how fast emotions shift.", color:"#a78bfa" },
     { id:"seasonal",  label:"Seasonal",  icon:"◷", desc:"12-month emotional fingerprint of the Philippines.", color:"#fb923c" },
     { id:"ethics",    label:"Ethics",    icon:"✓", desc:"How we protect anonymity and handle data responsibly.", color:"#10b981" },
-    { id:"api",       label:"API",       icon:"⌘", desc:"Data access for researchers, journalists, institutions.", color:"#ec4899" },
+    { id:"methodology", label:"Methodology", icon:"◎", desc:"How ESI and HDR are calculated. What this data is and isn't.", color:"#ec4899" },
   ];
 
   return (
@@ -677,11 +697,13 @@ function HomePage({ navigate, openModal }) {
             }
           </p>
 
+          {/* Emotion distribution bar */}
           <div style={{ animation:"fadeUp 0.7s 0.6s both" }}>
             <div style={{ fontFamily:"DM Mono", fontSize:"0.54rem", letterSpacing:"0.12em",
               textTransform:"uppercase", color:T.muted, marginBottom:"0.5rem" }}>
               National Emotional Distribution
             </div>
+
             {loading ? (
               <Skeleton height={10} />
             ) : hasData ? (
@@ -691,7 +713,8 @@ function HomePage({ navigate, openModal }) {
                     const em = EMOTION_MAP[key];
                     return (
                       <div key={key}
-                        style={{ flex: pct * barProgress, background: em?.hex || T.muted,
+                        style={{ flex: pct * barProgress,
+                          background: em?.hex || T.muted,
                           transition:"flex 1.5s cubic-bezier(.4,0,.2,1)" }}
                         title={`${em?.name || key}: ${Math.round(pct*100)}%`} />
                     );
@@ -703,7 +726,8 @@ function HomePage({ navigate, openModal }) {
                     return (
                       <div key={key} style={{ display:"flex", alignItems:"center",
                         gap:"0.3rem", fontFamily:"DM Mono", fontSize:"0.54rem", color:T.muted }}>
-                        <div style={{ width:7, height:7, borderRadius:"50%", background:em?.hex || T.muted }} />
+                        <div style={{ width:7, height:7, borderRadius:"50%",
+                          background:em?.hex || T.muted }} />
                         {em?.name || key} {Math.round(pct*100)}%
                       </div>
                     );
@@ -745,6 +769,7 @@ function HomePage({ navigate, openModal }) {
         </div>
       </section>
 
+      {/* Page grid */}
       <section style={{ padding:bp==="mobile"?"2rem 1.25rem":"2.5rem 2.5rem",
         borderTop:`1px solid ${T.border}` }}>
         <div style={{ fontFamily:"DM Mono", fontSize:"0.54rem", letterSpacing:"0.16em",
@@ -787,7 +812,10 @@ function DashboardPage({ navigate }) {
   useEffect(() => {
     setLoading(true);
     Promise.all([getNational(period), getLGUAggregations(period)])
-      .then(([nat, lguData]) => { setNational(nat); setLgus(lguData); })
+      .then(([nat, lguData]) => {
+        setNational(nat);
+        setLgus(lguData);
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [period]);
@@ -803,6 +831,7 @@ function DashboardPage({ navigate }) {
           subtitle="Real-time aggregated data from anonymous submissions across Philippine cities and municipalities." />
       </div>
 
+      {/* Period selector */}
       <div style={{ padding:bp==="mobile"?"0 1.25rem 1.25rem":"0 0 1.25rem",
         display:"flex", gap:"0.25rem" }}>
         {["7d","30d","90d"].map(t => (
@@ -816,12 +845,14 @@ function DashboardPage({ navigate }) {
         ))}
       </div>
 
+      {/* Metrics */}
       <div ref={ref} style={{ display:"grid",
         gridTemplateColumns:bp==="mobile"?"1fr 1fr":bp==="tablet"?"1fr 1fr":"repeat(4,1fr)",
         border:`1px solid ${T.border}`, borderBottom:"none" }}>
         {[
           { label:"Emotional Stability", value:national?.esi, desc:"National ESI",
-            color:national?.esi ? esiColor(national.esi) : T.muted, fill:(national?.esi||0)*100 },
+            color:national?.esi ? esiColor(national.esi) : T.muted,
+            fill:(national?.esi||0)*100 },
           { label:"Hope / Despair Ratio", value:national?.hdr, desc:"National HDR",
             color:national?.hdr>1?T.teal:T.rose, fill:Math.min((national?.hdr||0)/2*100,100) },
           { label:"Dominant Emotion", value:national?.dominant_emotion
@@ -852,6 +883,7 @@ function DashboardPage({ navigate }) {
         ))}
       </div>
 
+      {/* LGU grid */}
       <div style={{ padding:bp==="mobile"?"2rem 1.25rem":"2rem 0 0" }}>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:"1rem" }}>
           <div style={{ fontFamily:"DM Mono", fontSize:"0.54rem", letterSpacing:"0.16em",
@@ -882,7 +914,7 @@ function DashboardPage({ navigate }) {
           </div>
         ) : lgus.length === 0 ? (
           <EmptyState icon="◉" title="No cities on the map yet"
-            body="Cities appear once they reach 50 submissions. Be the first to submit from your city."
+            body={`Cities appear once they reach 50 submissions. Be the first to submit from your city.`}
             cta="Submit Your Feeling" onCta={() => navigate("home")} />
         ) : (
           <div style={{ display:"grid",
@@ -917,9 +949,13 @@ function DashboardPage({ navigate }) {
                   <div style={{ display:"flex", alignItems:"center", gap:"0.4rem",
                     marginTop:"0.4rem", paddingTop:"0.4rem",
                     borderTop:`1px solid ${T.border}`, fontFamily:"DM Mono", fontSize:"0.5rem" }}>
-                    <span style={{ color:vc }}>{a.velocity > 0 ? "↑" : a.velocity < 0 ? "↓" : "→"}</span>
+                    <span style={{ color:vc }}>
+                      {a.velocity > 0 ? "↑" : a.velocity < 0 ? "↓" : "→"}
+                    </span>
                     <span style={{ color:esiColor(a.esi) }}>ESI {a.esi}</span>
-                    <span style={{ color:T.muted, marginLeft:"auto" }}>{a.submission_count?.toLocaleString()}</span>
+                    <span style={{ color:T.muted, marginLeft:"auto" }}>
+                      {a.submission_count?.toLocaleString()}
+                    </span>
                   </div>
                 </div>
               );
@@ -986,7 +1022,8 @@ function MapPage({ openModal }) {
           {em && (
             <div style={{ background:`${em.hex}10`, border:`1px solid ${em.hex}30`,
               padding:"0.5rem 0.65rem", marginBottom:"0.85rem",
-              fontFamily:"DM Mono", fontSize:"0.56rem", color:em.hex, textTransform:"capitalize" }}>
+              fontFamily:"DM Mono", fontSize:"0.56rem", color:em.hex,
+              textTransform:"capitalize" }}>
               ◈ Dominant: {em.emoji} {dominant} · {Math.round((dist[dominant]||0)*100)}%
             </div>
           )}
@@ -1067,7 +1104,8 @@ function MapPage({ openModal }) {
           {loading ? (
             <div style={{ textAlign:"center" }}>
               <Skeleton height={300} width={240} />
-              <div style={{ fontFamily:"DM Mono", fontSize:"0.56rem", color:T.muted, marginTop:"1rem" }}>Loading map data...</div>
+              <div style={{ fontFamily:"DM Mono", fontSize:"0.56rem",
+                color:T.muted, marginTop:"1rem" }}>Loading map data...</div>
             </div>
           ) : lgus.length === 0 ? (
             <EmptyState icon="◉" title="Map is waiting"
@@ -1084,12 +1122,15 @@ function MapPage({ openModal }) {
                   const lat = a.lgus?.lat;
                   const lng = a.lgus?.lng;
                   if (!lat || !lng) return null;
+                  // Map Philippines lat/lng to SVG coordinates
+                  // Philippines roughly: lat 4.5–21.5, lng 116–127
                   const x = ((lng - 116) / (127 - 116)) * 260 + 20;
                   const y = ((21.5 - lat) / (21.5 - 4.5)) * 460 + 20;
                   return (
                     <g key={a.id} onClick={() => handleSelect(a)} style={{ cursor:"pointer" }}>
                       <circle cx={x} cy={y} r={isSelected?14:10}
-                        fill={em?.hex||T.amber} opacity={0.15} style={{ transition:"all 0.3s" }} />
+                        fill={em?.hex||T.amber} opacity={0.15}
+                        style={{ transition:"all 0.3s" }} />
                       <circle cx={x} cy={y} r={isSelected?6:4}
                         fill={em?.hex||T.amber} opacity={isSelected?1:0.85}
                         stroke={isSelected?"#fff":"none"} strokeWidth={isSelected?1:0}
@@ -1111,7 +1152,9 @@ function MapPage({ openModal }) {
           )}
         </div>
         {bp === "desktop" && (
-          <div style={{ overflowY:"auto", maxHeight:600 }}><SidebarContent /></div>
+          <div style={{ overflowY:"auto", maxHeight:600 }}>
+            <SidebarContent />
+          </div>
         )}
       </div>
     </div>
@@ -1136,6 +1179,7 @@ function TrendsPage() {
   const distEntries = Object.entries(dist)
     .map(([key, pct]) => ({ key, pct: Math.round(pct*100), ...EMOTION_MAP[key] }))
     .sort((a,b) => b.pct - a.pct);
+
   const [ref, inView] = useInView(0.05);
 
   return (
@@ -1147,7 +1191,9 @@ function TrendsPage() {
       </div>
 
       {loading ? (
-        <div style={{ padding:bp==="mobile"?"0 1.25rem":"0" }}><Skeleton height={200} /></div>
+        <div style={{ padding:bp==="mobile"?"0 1.25rem":"0" }}>
+          <Skeleton height={200} />
+        </div>
       ) : lgus.length === 0 ? (
         <div style={{ padding:bp==="mobile"?"0 1.25rem":"0" }}>
           <EmptyState icon="↗" title="No trend data yet"
@@ -1156,10 +1202,13 @@ function TrendsPage() {
       ) : (
         <div ref={ref} style={{ display:"grid",
           gridTemplateColumns:bp==="desktop"?"1fr 1fr":"1fr",
-          gap:bp==="desktop"?"3rem":"2rem", padding:bp==="mobile"?"0 1.25rem":"0" }}>
+          gap:bp==="desktop"?"3rem":"2rem",
+          padding:bp==="mobile"?"0 1.25rem":"0" }}>
           <div>
             <div style={{ fontFamily:"DM Mono", fontSize:"0.54rem", letterSpacing:"0.14em",
-              textTransform:"uppercase", color:T.muted, marginBottom:"0.75rem" }}>Select City</div>
+              textTransform:"uppercase", color:T.muted, marginBottom:"0.75rem" }}>
+              Select City
+            </div>
             <div style={{ display:"flex", flexWrap:"wrap", gap:"0.35rem", marginBottom:"1.5rem" }}>
               {lgus.map(a => {
                 const vc = a.velocity > 0 ? "#10b981" : a.velocity < 0 ? T.rose : T.muted;
@@ -1172,12 +1221,15 @@ function TrendsPage() {
                       color:selected?.id===a.id?T.amber:T.muted,
                       cursor:"pointer", transition:"all 0.2s",
                       display:"flex", alignItems:"center", gap:"0.35rem" }}>
-                    <span style={{ color:vc }}>{a.velocity > 0 ? "↑" : a.velocity < 0 ? "↓" : "→"}</span>
+                    <span style={{ color:vc }}>
+                      {a.velocity > 0 ? "↑" : a.velocity < 0 ? "↓" : "→"}
+                    </span>
                     {a.lgus?.name}
                   </button>
                 );
               })}
             </div>
+
             {selected && (
               <div style={{ background:T.surface, border:`1px solid ${T.border}`, padding:"1.25rem" }}>
                 <div style={{ fontFamily:"DM Mono", fontSize:"0.52rem", letterSpacing:"0.12em",
@@ -1207,7 +1259,8 @@ function TrendsPage() {
                   fill={(selected.esi||0)*100} />
                 <ScoreCard label="HDR" value={selected.hdr}
                   desc={selected.hdr>1?"Hope-leaning":"Despair-leaning"}
-                  color={selected.hdr>1?T.teal:T.rose} fill={Math.min((selected.hdr||0)/2*100,100)} />
+                  color={selected.hdr>1?T.teal:T.rose}
+                  fill={Math.min((selected.hdr||0)/2*100,100)} />
                 <ScoreCard label="Velocity" value={selected.velocity!==null?`${selected.velocity>0?"+":""}${selected.velocity}`:"—"}
                   desc="7-day rate of change"
                   color={selected.velocity>0?"#10b981":selected.velocity<0?T.rose:T.muted}
@@ -1215,9 +1268,12 @@ function TrendsPage() {
                 <ScoreCard label="Submissions" value={selected.submission_count?.toLocaleString()}
                   desc="7-day window" color={T.text} fill={40} />
               </div>
+
               <div style={{ padding:"1rem", border:`1px solid ${T.border}`, background:T.bg }}>
                 <div style={{ fontFamily:"DM Mono", fontSize:"0.52rem", letterSpacing:"0.12em",
-                  textTransform:"uppercase", color:T.muted, marginBottom:"0.4rem" }}>Velocity Reading</div>
+                  textTransform:"uppercase", color:T.muted, marginBottom:"0.4rem" }}>
+                  Velocity Reading
+                </div>
                 <p style={{ fontFamily:"'Playfair Display',serif", fontStyle:"italic",
                   fontSize:"0.9rem", lineHeight:1.6, color:T.text }}>
                   {selected.lgus?.name} is {
@@ -1235,6 +1291,7 @@ function TrendsPage() {
         </div>
       )}
 
+      {/* All cities comparison */}
       {lgus.length > 1 && (
         <div style={{ padding:bp==="mobile"?"2rem 1.25rem 0":"2.5rem 0 0" }}>
           <div style={{ fontFamily:"DM Mono", fontSize:"0.54rem", letterSpacing:"0.16em",
@@ -1262,12 +1319,15 @@ function TrendsPage() {
                       {a.velocity > 0 ? "↑" : a.velocity < 0 ? "↓" : "→"} {a.dominant_emotion}
                     </div>
                   </div>
-                  <div style={{ height:4, background:"rgba(255,255,255,0.05)", borderRadius:2, position:"relative" }}>
+                  <div style={{ height:4, background:"rgba(255,255,255,0.05)",
+                    borderRadius:2, position:"relative" }}>
                     <div style={{ position:"absolute", top:0, left:0, bottom:0,
-                      width:`${(a.esi||0)*100}%`, background:esiColor, borderRadius:2, transition:"width 1s" }} />
+                      width:`${(a.esi||0)*100}%`, background:esiColor,
+                      borderRadius:2, transition:"width 1s" }} />
                   </div>
                   <div style={{ fontFamily:"DM Mono", fontSize:"0.6rem",
-                    color:esiColor, textAlign:"right", fontVariantNumeric:"tabular-nums" }}>{a.esi}</div>
+                    color:esiColor, textAlign:"right",
+                    fontVariantNumeric:"tabular-nums" }}>{a.esi}</div>
                 </div>
               );
             })}
@@ -1278,7 +1338,7 @@ function TrendsPage() {
   );
 }
 
-// ─── PAGE: SEASONAL ───────────────────────────────────────────────────────────
+// ─── PAGE: SEASONAL (Static — no live data needed) ────────────────────────────
 const SEASONAL = [
   { month:"Jan", dominant:"Determination", hex:"#3b82f6", note:"New year resolve" },
   { month:"Feb", dominant:"Longing",       hex:"#6366f1", note:"Valentine & OFW separation" },
@@ -1386,7 +1446,9 @@ function SeasonalPage() {
             </div>
             <div>
               <div style={{ fontFamily:"DM Mono", fontSize:"0.52rem", letterSpacing:"0.12em",
-                textTransform:"uppercase", color:T.muted, marginBottom:"0.4rem" }}>Baseline Source</div>
+                textTransform:"uppercase", color:T.muted, marginBottom:"0.4rem" }}>
+                Baseline Source
+              </div>
               <p style={{ fontFamily:"DM Mono", fontSize:"0.56rem", color:T.muted, lineHeight:1.7 }}>
                 These patterns are derived from cultural and historical research.
                 As PEI collects real submissions across full calendar years, actual data will
@@ -1434,10 +1496,12 @@ function EthicsPage() {
           </div>
         ))}
       </div>
+
       <div style={{ padding:bp==="mobile"?"2rem 1.25rem 0":"2.5rem 0 0" }}>
         <blockquote style={{ fontFamily:"'Playfair Display',serif", fontStyle:"italic",
           fontSize:bp==="mobile"?"1.1rem":"1.5rem", lineHeight:1.5, letterSpacing:"-0.01em",
-          borderLeft:`3px solid ${T.amber}`, paddingLeft:"1.25rem", margin:0, maxWidth:680 }}>
+          borderLeft:`3px solid ${T.amber}`, paddingLeft:"1.25rem", margin:0,
+          maxWidth:680 }}>
           "The Philippines is not a dataset to be exploited. It is a people to be witnessed.
           We built this to listen, not to sell the listening."
         </blockquote>
@@ -1447,66 +1511,80 @@ function EthicsPage() {
 }
 
 // ─── PAGE: API ────────────────────────────────────────────────────────────────
-function APIPage() {
+
+// ─── PAGE: METHODOLOGY ───────────────────────────────────────────────────────
+function MethodologyPage() {
   const bp = useBreakpoint();
   const [ref, inView] = useInView();
-  const tiers = [
-    { label:"Data API", icon:"⌘", target:"Universities · Media · Research Groups",
-      desc:"Real-time access to aggregated emotional data via REST API. City-level, regional, and national endpoints.", price:"₱ 8,000 / mo", color:T.teal,
-      features:["REST endpoints","All active LGU feeds","30-day historical","Webhooks","JSON + CSV export"] },
-    { label:"Premium Dashboard", icon:"◈", target:"Journalists · Policy Teams · Analysts",
-      desc:"Full trend history, exportable charts, deep analytics, custom date ranges, and city comparison tools.", price:"₱ 2,500 / mo", color:T.amber,
-      features:["Unlimited date ranges","Correlation overlays","Custom comparison","Exportable charts","Priority support"] },
-    { label:"Quarterly Reports", icon:"◉", target:"Corporations · Government · Foundations",
-      desc:"Commissioned deep-dive reports. Q1–Q4 Emotional Climate Reports. Branded. Media-ready.", price:"Custom", color:"#a78bfa",
-      features:["Quarterly PDF reports","Custom geographic scope","Media-ready graphics","Anomaly flagging","Dedicated analyst"] },
+
+  const sections = [
+    {
+      icon: "◈",
+      title: "What is PEI?",
+      color: T.amber,
+      body: "The Philippines Emotional Index is a voluntary, anonymous emotional census. It collects self-reported emotions from Filipinos across 1,634 cities and municipalities and aggregates them into a real-time national pulse. It is not a scientific survey. It does not claim statistical representativeness. It is a mirror — reflecting what participating Filipinos choose to share."
+    },
+    {
+      icon: "◉",
+      title: "How is ESI calculated?",
+      color: T.teal,
+      body: "The Emotional Stability Index (ESI) is based on Shannon entropy — a measure of diversity. When submissions are spread evenly across all 8 emotions, ESI approaches 1.0 (stable, diverse). When one emotion dominates, ESI drops toward 0 (turbulent, uniform). ESI ranges from 0 to 1. Above 0.6 is considered stable. Below 0.4 is considered turbulent."
+    },
+    {
+      icon: "◷",
+      title: "How is HDR calculated?",
+      color: "#a78bfa",
+      body: "The Hope / Despair Ratio (HDR) divides the proportion of hope-leaning emotions (hope, relief, determination) by despair-leaning emotions (grief, anger, anxiety, regret, longing). An HDR above 1.0 means the city is hope-leaning. Below 1.0 means despair-leaning. Exactly 1.0 means perfect balance."
+    },
+    {
+      icon: "↗",
+      title: "What is Velocity?",
+      color: "#fb923c",
+      body: "Velocity measures how fast ESI is changing. A positive velocity means emotional diversity is increasing — the city is stabilizing. A negative velocity means one emotion is starting to dominate. Velocity is computed by comparing the current period ESI against the equivalent previous period."
+    },
+    {
+      icon: "◌",
+      title: "What are the limitations?",
+      color: T.rose,
+      body: "PEI has real limitations. Only Filipinos with internet access who choose to participate are represented. Submissions cannot be verified by location. The 50-submission threshold reduces noise but does not eliminate it. Coordinated submissions could skew results. We publish these limitations openly because honest data — even imperfect data — is more valuable than false precision."
+    },
+    {
+      icon: "✓",
+      title: "How is anonymity protected?",
+      color: "#10b981",
+      body: "No IP addresses are stored permanently. No device fingerprints are retained. Daily rotating salts mean yesterday's hashes are unrecoverable. Raw text from optional messages is never stored — only emotional signal. Cities appear only after 50 submissions, preventing individual exposure. The smallest unit of display is always a community."
+    },
   ];
 
   return (
     <div>
       <div style={{ padding:bp==="mobile"?"0 1.25rem":"0" }}>
-        <PageHeader label="Data Access & API" title="Insights, Not Individuals."
-          subtitle="We monetize the aggregate signal — never the person who created it." />
+        <PageHeader label="Methodology" title="How the Index Works."
+          subtitle="What PEI measures, how it measures it, and what it cannot tell you. Transparency is part of the product." />
       </div>
       <div ref={ref} style={{ display:"grid",
         gridTemplateColumns:bp==="mobile"?"1fr":bp==="tablet"?"1fr 1fr":"repeat(3,1fr)",
         gap:1, background:T.border, border:`1px solid ${T.border}` }}>
-        {tiers.map((t, i) => (
-          <div key={i} style={{ background:T.surface, padding:"1.75rem 1.4rem",
-            position:"relative", overflow:"hidden",
-            opacity:inView?1:0, transform:inView?"none":"translateY(20px)",
-            transition:`all 0.6s ${i*0.12}s ease` }}>
-            <div style={{ position:"absolute", top:0, left:0, right:0, height:2, background:t.color }} />
-            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:"1.6rem",
-              color:t.color, opacity:0.3, marginBottom:"0.5rem", lineHeight:1 }}>{t.icon}</div>
-            <div style={{ fontFamily:"DM Mono", fontSize:"0.54rem", letterSpacing:"0.14em",
-              textTransform:"uppercase", color:t.color, marginBottom:"0.3rem" }}>{t.label}</div>
-            <div style={{ fontFamily:"DM Mono", fontSize:"0.54rem", color:T.muted,
-              marginBottom:"0.85rem", paddingBottom:"0.85rem",
-              borderBottom:`1px solid ${T.border}` }}>{t.target}</div>
-            <div style={{ fontFamily:"DM Mono", fontSize:"0.58rem", color:T.muted,
-              lineHeight:1.7, marginBottom:"1.1rem" }}>{t.desc}</div>
-            <div style={{ display:"flex", flexDirection:"column", gap:"0.35rem", marginBottom:"1.1rem" }}>
-              {t.features.map(f => (
-                <div key={f} style={{ display:"flex", alignItems:"center", gap:"0.5rem",
-                  fontFamily:"DM Mono", fontSize:"0.56rem", color:T.muted }}>
-                  <div style={{ width:5, height:5, borderRadius:"50%", background:t.color, flexShrink:0 }} />
-                  {f}
-                </div>
-              ))}
-            </div>
-            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:"1.4rem",
-              fontWeight:700, color:t.color, marginBottom:"0.75rem" }}>{t.price}</div>
-            <button style={{ width:"100%", background:"none",
-              border:`1px solid ${t.color}40`, color:t.color, padding:"0.6rem 0",
-              fontFamily:"DM Mono", fontSize:"0.58rem", letterSpacing:"0.08em",
-              textTransform:"uppercase", cursor:"pointer", transition:"all 0.2s" }}
-              onMouseEnter={e=>e.currentTarget.style.background=`${t.color}12`}
-              onMouseLeave={e=>e.currentTarget.style.background="none"}>
-              Contact for Access →
-            </button>
+        {sections.map((s, i) => (
+          <div key={i} style={{ background:T.bg, padding:"1.5rem",
+            opacity:inView?1:0, transform:inView?"none":"translateY(16px)",
+            transition:`all 0.5s ${i*0.08}s ease` }}>
+            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:"2rem",
+              color:s.color, opacity:0.5, marginBottom:"0.5rem", lineHeight:1 }}>{s.icon}</div>
+            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:"0.95rem",
+              fontWeight:700, marginBottom:"0.4rem" }}>{s.title}</div>
+            <div style={{ fontFamily:"DM Mono", fontSize:"0.6rem",
+              color:T.muted, lineHeight:1.7 }}>{s.body}</div>
           </div>
         ))}
+      </div>
+      <div style={{ padding:bp==="mobile"?"2rem 1.25rem 0":"2.5rem 0 0" }}>
+        <blockquote style={{ fontFamily:"'Playfair Display',serif", fontStyle:"italic",
+          fontSize:bp==="mobile"?"1.1rem":"1.5rem", lineHeight:1.5, letterSpacing:"-0.01em",
+          borderLeft:`3px solid ${T.amber}`, paddingLeft:"1.25rem",
+          margin:0, maxWidth:680 }}>
+          "PEI is a voluntary emotional census — a living record of how Filipinos who choose to participate are feeling. It is not a scientific survey. It is a mirror, not a measurement."
+        </blockquote>
       </div>
     </div>
   );
@@ -1550,12 +1628,12 @@ function AnonymityFrameworkPage() {
   const bp = useBreakpoint();
   const [ref, inView] = useInView(0.05);
   const layers = [
-    { num:"01", color:T.teal,    title:"No Persistent IP Storage",     body:"Your IP address is used solely to enforce rate limits within a single session. It is never written to any permanent data store and is discarded after the session window closes." },
-    { num:"02", color:T.amber,   title:"Daily Rotating Salt",           body:"Any session token is hashed using a salt that rotates every 24 hours. Yesterday's hash is mathematically unrecoverable today, even with full access to the current salt." },
-    { num:"03", color:T.rose,    title:"No Device Fingerprinting",      body:"PEI does not use canvas fingerprinting, WebGL fingerprinting, AudioContext fingerprinting, or any other technique to build a device profile." },
-    { num:"04", color:"#6366f1", title:"Text-Ephemeral Processing",     body:"If you include an optional text message, it is processed in memory for emotional signal classification only. The raw text string is never written to disk, never logged, and cannot be retrieved." },
-    { num:"05", color:"#10b981", title:"Community Threshold Gating",    body:"No LGU data is displayed until at least 50 independent submissions have been recorded for that community. This prevents reverse-engineering of individual responses from small-group statistics." },
-    { num:"06", color:T.amber,   title:"Aggregation-Before-Storage",    body:"Individual submissions are collapsed into community-level statistical distributions before any long-term storage occurs. The atomic unit of our database is a community aggregate, not an individual response." },
+    { num:"01", color:T.teal,    title:"No Persistent IP Storage",  body:"Your IP address is used solely to enforce rate limits within a single session. It is never written to any permanent data store and is discarded after the session window closes." },
+    { num:"02", color:T.amber,   title:"Daily Rotating Salt",        body:"Any session token is hashed using a salt that rotates every 24 hours. Yesterday's hash is mathematically unrecoverable today, even with full access to the current salt." },
+    { num:"03", color:T.rose,    title:"No Device Fingerprinting",   body:"PEI does not use canvas fingerprinting, WebGL fingerprinting, AudioContext fingerprinting, or any other technique to build a device profile." },
+    { num:"04", color:"#6366f1", title:"Text-Ephemeral Processing",  body:"If you include an optional text message, it is processed in memory for emotional signal classification only. The raw text string is never written to disk, never logged, and cannot be retrieved." },
+    { num:"05", color:"#10b981", title:"Community Threshold Gating", body:"No LGU data is displayed until at least 50 independent submissions have been recorded for that community. This prevents reverse-engineering of individual responses from small-group statistics." },
+    { num:"06", color:T.amber,   title:"Aggregation-Before-Storage", body:"Individual submissions are collapsed into community-level statistical distributions before any long-term storage occurs. The atomic unit of our database is a community aggregate, not an individual response." },
   ];
   return (
     <div style={{ padding:bp==="mobile"?"0 1.25rem":"0" }}>
@@ -1673,7 +1751,7 @@ function ContactPage() {
         </div>
         <div style={{ display:"flex", flexDirection:"column", gap:"1rem" }}>
           {[
-            { icon:"◈", color:T.teal,    title:"General",  body:"hello@pei.ph — Questions about the project or how to get involved." },
+            { icon:"◈", color:T.teal,    title:"General",   body:"hello@pei.ph — Questions about the project or how to get involved." },
             { icon:"◉", color:T.amber,   title:"Research",  body:"research@pei.ph — Academic partnerships and data access requests." },
             { icon:"△", color:T.rose,    title:"Press",     body:"press@pei.ph — Media inquiries and interview requests." },
             { icon:"□", color:"#6366f1", title:"Technical", body:"api@pei.ph — Developer questions and API integration support." },
@@ -1716,8 +1794,6 @@ function Footer({ navigate, openModal }) {
         <div style={{ display:"grid",
           gridTemplateColumns:bp==="mobile"?"1fr":bp==="tablet"?"1fr 1fr":"2fr 1fr 1fr 1fr",
           gap:bp==="mobile"?"2rem":"2.5rem", marginBottom:"2rem" }}>
-
-          {/* Brand */}
           <div>
             <div style={{ fontFamily:"'Playfair Display',serif", fontSize:"1.4rem",
               fontWeight:900, color:T.amber, marginBottom:"0.4rem" }}>PEI</div>
@@ -1734,20 +1810,16 @@ function Footer({ navigate, openModal }) {
               Submit Your Feeling →
             </button>
           </div>
-
-          {/* Pages */}
           <div>
             <div style={{ fontFamily:"DM Mono", fontSize:"0.52rem", letterSpacing:"0.14em",
               textTransform:"uppercase", color:T.muted, marginBottom:"0.75rem" }}>Pages</div>
-            <FLink label="Dashboard" page="dashboard" />
-            <FLink label="City Map"  page="map" />
-            <FLink label="Trends"    page="trends" />
-            <FLink label="Seasonal"  page="seasonal" />
-            <FLink label="Ethics"    page="ethics" />
-            <FLink label="API"       page="api" />
+            <FLink label="Dashboard"   page="dashboard" />
+            <FLink label="City Map"    page="map" />
+            <FLink label="Trends"      page="trends" />
+            <FLink label="Seasonal"    page="seasonal" />
+            <FLink label="Ethics"      page="ethics" />
+            <FLink label="Methodology" page="methodology" />
           </div>
-
-          {/* Legal */}
           <div>
             <div style={{ fontFamily:"DM Mono", fontSize:"0.52rem", letterSpacing:"0.14em",
               textTransform:"uppercase", color:T.muted, marginBottom:"0.75rem" }}>Legal</div>
@@ -1756,18 +1828,15 @@ function Footer({ navigate, openModal }) {
             <FLink label="Data Methodology"    page="data-methodology" />
             <FLink label="Research Access"     page="research-access" />
           </div>
-
-          {/* Documentation */}
           <div>
             <div style={{ fontFamily:"DM Mono", fontSize:"0.52rem", letterSpacing:"0.14em",
               textTransform:"uppercase", color:T.muted, marginBottom:"0.75rem" }}>Documentation</div>
-            <FLink label="API Reference"   page="api" />
-            <FLink label="Data Access"     page="api" />
+            <FLink label="API Reference"   page="methodology" />
+            <FLink label="Data Access"     page="methodology" />
             <FLink label="Research Portal" page="research-access" />
             <FLink label="Contact Us"      page="contact" />
           </div>
         </div>
-
         <div style={{ borderTop:`1px solid ${T.border}`, paddingTop:"1.1rem",
           display:"flex", alignItems:"center", justifyContent:"space-between",
           flexWrap:"wrap", gap:"0.5rem",
@@ -1804,13 +1873,12 @@ function PageWrapper({ children, page }) {
 export default function App() {
   const { page, navigate } = useHashRouter();
   const [modalOpen, setModalOpen] = useState(false);
-  const openModal = () => setModalOpen(true);
 
-  const allPages = [
-    "home","dashboard","map","trends","seasonal","ethics","api",
+  const openModal = () => setModalOpen(true);
+  const currentPage = [
+    "home","dashboard","map","trends","seasonal","ethics","methodology",
     "privacy","anonymity","data-methodology","research-access","contact",
-  ];
-  const currentPage = allPages.includes(page) ? page : "home";
+  ].includes(page) ? page : "home";
 
   const pages = {
     home:               <HomePage navigate={navigate} openModal={openModal} />,
@@ -1819,7 +1887,7 @@ export default function App() {
     trends:             <TrendsPage />,
     seasonal:           <SeasonalPage />,
     ethics:             <EthicsPage />,
-    api:                <APIPage />,
+    methodology:        <MethodologyPage />,
     privacy:            <PrivacyPolicyPage />,
     anonymity:          <AnonymityFrameworkPage />,
     "data-methodology": <DataMethodologyPage />,
