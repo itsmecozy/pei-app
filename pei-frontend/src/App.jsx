@@ -33,9 +33,13 @@ const VALID_PAGES = [
 
 export default function App() {
   const { page, navigate }           = useHashRouter();
-  const { user, profile, hasAccess } = useAuth();
+  const { user, profile: rawProfile, hasAccess } = useAuth();
   const { themeId, tokens, setTheme } = useTheme();
   const T = tokens;
+
+  // Allow profile to be updated from SettingsPage without re-auth
+  const [profileOverride, setProfileOverride] = useState(null);
+  const profile = profileOverride || rawProfile;
 
   const [modalOpen,   setModalOpen]   = useState(false);
   const [authOpen,    setAuthOpen]    = useState(false);
@@ -89,13 +93,15 @@ export default function App() {
             pointerEvents:isExpired?"none":"auto", transition:"filter 0.3s" }}>
             <PersonalDashboard key={user.id} user={user} profile={profile} navigate={handleNavigate} />
           </div>
-          {isExpired && <PricingOverlay plan={profile?.plan||"trial"} navigate={handleNavigate} />}
+          {isExpired && <PricingOverlay plan={profile?.plan_activated_at ? 'paid' : 'trial'} navigate={handleNavigate} />}
         </>
       : <RedirectToAuth T={T} onAuth={() => setAuthOpen(true)} />,
     account:  user
       ? <AccountPage  user={user} profile={profile} navigate={handleNavigate} />
       : <RedirectToAuth T={T} onAuth={() => setAuthOpen(true)} />,
-    settings: <SettingsPage themeId={themeId} setTheme={setTheme} />,
+    settings: <SettingsPage themeId={themeId} setTheme={setTheme}
+        user={user} profile={profile}
+        onProfileUpdated={(updated) => setProfileOverride(updated)} />,
   };
 
   return (
@@ -120,6 +126,7 @@ export default function App() {
           currentPage={currentPage}
           openModal={openModal}
           user={user}
+          profile={profile}
           onAuthClick={() => setAuthOpen(true)}
         />
 
@@ -128,7 +135,8 @@ export default function App() {
           <Footer navigate={handleNavigate} openModal={openModal} />
         </PageWrapper>
 
-        <SubmissionModal open={modalOpen}   onClose={()=>setModalOpen(false)}   onSuccess={handleSubmitSuccess} />
+        <SubmissionModal open={modalOpen}   onClose={()=>setModalOpen(false)}   onSuccess={handleSubmitSuccess}
+          homeLguId={profile?.home_lgu_id} homeLguName={profile?.home_lgu_name} />
         <AuthModal       open={authOpen}    onClose={()=>setAuthOpen(false)} />
         <PersonalPrompt  open={promptOpen}  emotion={lastEmotion}
           onSignUp={()=>{ setPromptOpen(false); setAuthOpen(true); }}
