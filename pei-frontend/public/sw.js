@@ -1,86 +1,88 @@
-// PEI Service Worker - handles background push notifications
-const CACHE_NAME = "pei-sw-v1";
+// PEI Service Worker v2
+// Reliable cross-device notification scheduling
 
-self.addEventListener("install", (event) => {
-  self.skipWaiting();
-});
+const SW_VERSION = "pei-sw-v2";
 
+self.addEventListener("install", () => self.skipWaiting());
+
+// ── On SW activation, restore schedule from cache ─────────────────────────
 self.addEventListener("activate", (event) => {
-  event.waitUntil(clients.claim());
+  event.waitUntil(
+    clients.claim().then(() =>
+      caches.open(SW_VERSION).then(async cache => {
+        const res = await cache.match("notif-times");
+        if (res) {
+          const times = await res.json();
+          scheduleNext(times);
+        }
+      })
+    )
+  );
 });
 
-// Handle push notifications from server (future)
-self.addEventListener("push", (event) => {
-  const data = event.data?.json() || {};
-  const title = data.title || "PEI — How are you feeling?";
-  const options = {
-    body:    data.body || "Take a moment to log your emotion for today.",
-    icon:    "/favicon.ico",
-    badge:   "/favicon.ico",
-    tag:     "pei-reminder",
-    renotify: true,
-    data:    { url: data.url || "/#home" },
-    actions: [
-      { action: "submit", title: "Log feeling" },
-      { action: "dismiss", title: "Later" },
-    ],
-  };
-  event.waitUntil(self.registration.showNotification(title, options));
-});
-
-// Handle notification click
+// ── Notification click handler ─────────────────────────────────────────────
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   if (event.action === "dismiss") return;
+
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
-      const url = event.notification.data?.url || "/";
       for (const client of list) {
-        if (client.url.includes(self.location.origin) && "focus" in client) {
+        if ("focus" in client) {
           client.focus();
           client.postMessage({ type: "OPEN_SUBMIT_MODAL" });
           return;
         }
       }
-      clients.openWindow(url);
+      return clients.openWindow("/");
     })
   );
 });
 
-// Handle scheduled alarm messages from the app
+// ── Message handler from app ───────────────────────────────────────────────
 self.addEventListener("message", (event) => {
   if (event.data?.type === "SCHEDULE_NOTIFICATION") {
-    const { times } = event.data;
-    // Store times in SW scope
-    self.notifTimes = times;
+    const times = event.data.times || ["20:00"];
+    caches.open(SW_VERSION).then(cache => {
+      cache.put("notif-times", new Response(JSON.stringify(times)));
+    });
     scheduleNext(times);
   }
+
   if (event.data?.type === "CANCEL_NOTIFICATIONS") {
-    if (self.notifTimeout) clearTimeout(self.notifTimeout);
+    if (self._notifTimer) { clearTimeout(self._notifTimer); self._notifTimer = null; }
+    caches.open(SW_VERSION).then(cache => cache.delete("notif-times"));
+  }
+
+  if (event.data?.type === "TEST_NOTIFICATION") {
+    self.registration.showNotification("PEI — Test 🔥", {
+      body: "Notifications are working on your device!",
+      icon: "/favicon.ico",
+      tag:  "pei-test",
+    });
   }
 });
 
+// ── Core scheduling ────────────────────────────────────────────────────────
 function scheduleNext(times) {
-  if (self.notifTimeout) clearTimeout(self.notifTimeout);
-  if (!times || !times.length) return;
+  if (self._notifTimer) clearTimeout(self._notifTimer);
+  if (!times?.length) return;
 
-  const now    = new Date();
-  const today  = now.getTime();
-
-  // Find the next upcoming time across all configured times
+  const now = Date.now();
   let nearest = null;
+
   for (const t of times) {
     const [h, m] = t.split(":").map(Number);
     const target = new Date();
     target.setHours(h, m, 0, 0);
-    if (target.getTime() <= today) target.setDate(target.getDate() + 1);
+    if (target.getTime() <= now) target.setDate(target.getDate() + 1);
     if (!nearest || target.getTime() < nearest.getTime()) nearest = target;
   }
 
   if (!nearest) return;
-  const msUntil = nearest.getTime() - today;
+  const ms = nearest.getTime() - now;
 
-  self.notifTimeout = setTimeout(async () => {
+  self._notifTimer = setTimeout(async () => {
     try {
       await self.registration.showNotification("PEI — How are you feeling?", {
         body:     "Take a moment to log your emotion for today.",
@@ -88,16 +90,15 @@ function scheduleNext(times) {
         badge:    "/favicon.ico",
         tag:      "pei-reminder",
         renotify: true,
-        data:     { url: "/#home" },
+        data:     { url: "/" },
         actions:  [
-          { action: "submit",  title: "Log feeling" },
+          { action: "open",    title: "Log feeling" },
           { action: "dismiss", title: "Later" },
         ],
       });
     } catch (e) {
-      console.warn("SW notification failed:", e);
+      console.warn("[PEI SW] Notification failed:", e);
     }
-    // Schedule next occurrence
-    scheduleNext(self.notifTimes || times);
-  }, msUntil);
+    scheduleNext(times);
+  }, ms);
 }
