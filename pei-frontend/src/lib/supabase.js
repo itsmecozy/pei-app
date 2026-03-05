@@ -8,16 +8,20 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 // ─── ANONYMOUS INDEX ──────────────────────────────────────────────────────────
 
 export async function submitEmotion({ lgu_id, emotion, intensity, text }) {
-  // Always use anon key for gateway auth (prevents 401)
-  // Send user JWT separately so edge function can detect tier
-  const { data: { session } } = await supabase.auth.getSession()
+  // Always use anon key for gateway (prevents 401)
+  // Try to get user session for tier detection — but never let it block the submission
+  let userToken = null
+  try {
+    const { data } = await supabase.auth.getSession()
+    userToken = data?.session?.access_token || null
+  } catch { /* ignore — submit as anonymous */ }
 
   const response = await fetch(`${SUPABASE_URL}/functions/v1/submit-emotion`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-      ...(session?.access_token && { 'x-user-token': session.access_token }),
+      ...(userToken && { 'x-user-token': userToken }),
     },
     body: JSON.stringify({ lgu_id, emotion, intensity, text }),
   })
