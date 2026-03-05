@@ -14,6 +14,7 @@ import AuthModal       from "./components/shared/AuthModal";
 import PersonalPrompt  from "./components/shared/PersonalPrompt";
 import PricingModal    from "./components/shared/PricingModal";
 import PricingOverlay  from "./components/shared/PricingOverlay";
+import DonateButton    from "./components/shared/DonateButton";
 
 import HomePage      from "./pages/HomePage";
 import DashboardPage from "./pages/DashboardPage";
@@ -123,6 +124,7 @@ export default function App() {
           onSignUp={()=>{ setPromptOpen(false); setAuthOpen(true); }}
           onDismiss={()=>setPromptOpen(false)} />
         <PricingModal    open={pricingOpen} onClose={()=>setPricingOpen(false)} />
+        <DonateButton />
       </div>
     </ThemeContext.Provider>
   );
