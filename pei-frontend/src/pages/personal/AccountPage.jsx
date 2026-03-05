@@ -99,6 +99,14 @@ export default function AccountPage({ user, profile, navigate }) {
           fontSize:"clamp(1.6rem,3.5vw,2.8rem)", fontWeight:900,
           letterSpacing:"-0.025em", lineHeight:1.1 }}>
           Your Account
+
+          <button onClick={() => navigate("personal")}
+  style={{ marginTop:"0.75rem", background:"none", border:`1px solid ${T.amber}`,
+    color:T.amber, padding:"0.35rem 0.9rem", fontFamily:"DM Mono",
+    fontSize:"0.52rem", letterSpacing:"0.08em", textTransform:"uppercase",
+    cursor:"pointer" }}>
+  ← View My Dashboard
+</button>
         </h1>
       </div>
 
