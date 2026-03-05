@@ -1,18 +1,16 @@
 import { useState, useEffect } from "react";
-import { T } from "../../constants/tokens";
+import { useT } from "../../context/ThemeContext";
 import { useBreakpoint } from "../../hooks/useBreakpoint";
 
 export default function PageWrapper({ children, page }) {
+  const T  = useT();
   const bp = useBreakpoint();
   const [mounted, setMounted] = useState(false);
 
+  useEffect(() => { setMounted(false); }, [page]);
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 20);
     return () => clearTimeout(t);
-  }, [page]);
-
-  useEffect(() => {
-    setMounted(false);
   }, [page]);
 
   const isDesktop = bp === "desktop";
@@ -20,8 +18,10 @@ export default function PageWrapper({ children, page }) {
   return (
     <main style={{
       marginLeft: isDesktop ? 220 : 0,
-      paddingTop: isDesktop ? 0 : 56,
+      paddingTop: isDesktop ? 52 : 56, // desktop: top avatar bar; mobile: top nav
       minHeight: "100vh",
+      background: T.bg,
+      color: T.text,
       opacity: mounted ? 1 : 0,
       transform: mounted ? "translateY(0)" : "translateY(8px)",
       transition: "opacity 0.3s ease, transform 0.3s ease",
