@@ -22,7 +22,7 @@ const MIN_THRESHOLD   = 50;
 // ─── CORS HEADERS ─────────────────────────────────────────────────────────────
 const corsHeaders = {
   "Access-Control-Allow-Origin":  "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-user-token",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
@@ -122,9 +122,10 @@ Deno.serve(async (req: Request) => {
     let userTier: "anonymous" | "trial" | "paid" = "anonymous";
     let userId: string | null = null;
 
-    const authHeader = req.headers.get("authorization");
-    if (authHeader && authHeader.startsWith("Bearer ")) {
-      const token = authHeader.replace("Bearer ", "");
+    // x-user-token carries the user JWT separately from the gateway anon key
+    const userToken = req.headers.get("x-user-token");
+    if (userToken) {
+      const token = userToken;
       try {
         const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
         if (!authError && user) {
@@ -246,19 +247,12 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // ─── UPDATE RATE LIMIT ────────────────────────────────────────────────────
-    if (currentCount === 0) {
-      await supabaseAdmin.from("rate_limits").insert({
-        hash_key:    rateKey,
-        date_bucket: today,
-        count:       1,
-      });
-    } else {
-      await supabaseAdmin.from("rate_limits")
-        .update({ count: currentCount + 1 })
-        .eq("hash_key", rateKey)
-        .eq("date_bucket", today);
-    }
+    // ─── UPDATE RATE LIMIT (upsert) ──────────────────────────────────────────
+    await supabaseAdmin.from("rate_limits").upsert({
+      hash_key:    rateKey,
+      date_bucket: today,
+      count:       currentCount + 1,
+    }, { onConflict: "hash_key,date_bucket" });
 
     // ─── UPDATE LGU SUBMISSION COUNT ──────────────────────────────────────────
     const { data: lguCount } = await supabaseAdmin
