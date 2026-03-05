@@ -30,11 +30,13 @@ import {
 
 // Pages — personal
 import PersonalDashboard from "./pages/personal/PersonalDashboard";
+import AccountPage       from "./pages/personal/AccountPage";
+import PricingOverlay    from "./components/shared/PricingOverlay";
 
 const VALID_PAGES = [
   "home","dashboard","map","trends","seasonal","ethics","methodology",
   "privacy","anonymity","data-methodology","research-access","contact",
-  "personal",
+  "personal","account",
 ];
 
 export default function App() {
@@ -45,27 +47,22 @@ export default function App() {
   const [authOpen, setAuthOpen]           = useState(false);
   const [promptOpen, setPromptOpen]       = useState(false);
   const [lastEmotion, setLastEmotion]     = useState(null);
-  const [lastLguId, setLastLguId]         = useState(null);
-  const [lastIntensity, setLastIntensity] = useState(3);
 
   const openModal   = () => setModalOpen(true);
   const currentPage = VALID_PAGES.includes(page) ? page : "home";
 
   const handleSubmitSuccess = ({ emotion, intensity, lgu_id }) => {
     setLastEmotion(emotion);
-    setLastLguId(lgu_id);
-    setLastIntensity(intensity);
-
-    // Dual-write: if logged in, silently mirror to personal index
     if (user && hasAccess) {
       savePersonalSubmission({ user_id: user.id, emotion, intensity, lgu_id }).catch(() => {});
     }
-
-    // If not logged in, show personal tracking prompt
     if (!user) {
       setTimeout(() => setPromptOpen(true), 400);
     }
   };
+
+  // Expired state — logged in but no access
+  const isExpired = user && !hasAccess;
 
   const pages = {
     home:               <HomePage      navigate={navigate} openModal={openModal} />,
@@ -80,11 +77,19 @@ export default function App() {
     "data-methodology": <DataMethodologyPage />,
     "research-access":  <ResearchAccessPage />,
     contact:            <ContactPage />,
-    personal: user && hasAccess
-      ? <PersonalDashboard user={user} profile={profile} navigate={navigate} />
-      : user && !hasAccess
-        ? <TrialExpired navigate={navigate} />
-        : <RedirectToAuth onAuth={() => setAuthOpen(true)} />,
+    personal: user
+      ? <>
+          {/* Always render dashboard, blur it if expired */}
+          <div style={{ position:"relative", filter:isExpired?"blur(4px) brightness(0.4)":"none",
+            pointerEvents:isExpired?"none":"auto", transition:"filter 0.3s" }}>
+            <PersonalDashboard user={user} profile={profile} navigate={navigate} />
+          </div>
+          {isExpired && <PricingOverlay plan={profile?.plan || "trial"} navigate={navigate} />}
+        </>
+      : <RedirectToAuth onAuth={() => setAuthOpen(true)} />,
+    account: user
+      ? <AccountPage user={user} profile={profile} navigate={navigate} />
+      : <RedirectToAuth onAuth={() => setAuthOpen(true)} />,
   };
 
   return (
@@ -108,7 +113,7 @@ export default function App() {
         currentPage={currentPage}
         openModal={openModal}
         user={user}
-        onAccountClick={() => user ? navigate("personal") : setAuthOpen(true)}
+        onAccountClick={() => user ? navigate("account") : setAuthOpen(true)}
       />
 
       <PageWrapper page={currentPage}>
@@ -151,25 +156,6 @@ function RedirectToAuth({ onAuth }) {
           padding:"0.6rem 1.5rem", fontFamily:"DM Mono", fontSize:"0.62rem",
           fontWeight:500, letterSpacing:"0.1em", textTransform:"uppercase", cursor:"pointer" }}>
         Sign In / Sign Up →
-      </button>
-    </div>
-  );
-}
-
-function TrialExpired({ navigate }) {
-  return (
-    <div style={{ padding:"4rem 0", textAlign:"center" }}>
-      <div style={{ fontFamily:"'Playfair Display',serif", fontSize:"2rem",
-        fontWeight:900, marginBottom:"0.75rem" }}>Your trial has ended.</div>
-      <p style={{ fontFamily:"DM Mono", fontSize:"0.64rem", color:T.muted,
-        lineHeight:1.7, marginBottom:"1.5rem" }}>
-        Unlock continued access for ₱49 (3 months) or ₱99 (lifetime).
-      </p>
-      <button onClick={() => navigate("pricing")}
-        style={{ background:T.amber, color:"#000", border:"none",
-          padding:"0.6rem 1.5rem", fontFamily:"DM Mono", fontSize:"0.62rem",
-          fontWeight:500, letterSpacing:"0.1em", textTransform:"uppercase", cursor:"pointer" }}>
-        Unlock Access →
       </button>
     </div>
   );
