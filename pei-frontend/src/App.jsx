@@ -12,6 +12,7 @@ import PageWrapper     from "./components/shared/PageWrapper";
 import SubmissionModal from "./components/shared/SubmissionModal";
 import AuthModal       from "./components/shared/AuthModal";
 import PersonalPrompt  from "./components/shared/PersonalPrompt";
+import PricingModal    from "./components/shared/PricingModal";
 
 // Pages — national index
 import HomePage      from "./pages/HomePage";
@@ -43,30 +44,34 @@ export default function App() {
   const { page, navigate } = useHashRouter();
   const { user, profile, hasAccess } = useAuth();
 
-  const [modalOpen, setModalOpen]         = useState(false);
-  const [authOpen, setAuthOpen]           = useState(false);
-  const [promptOpen, setPromptOpen]       = useState(false);
-  const [lastEmotion, setLastEmotion]     = useState(null);
+  const [modalOpen,   setModalOpen]   = useState(false);
+  const [authOpen,    setAuthOpen]    = useState(false);
+  const [promptOpen,  setPromptOpen]  = useState(false);
+  const [pricingOpen, setPricingOpen] = useState(false);
+  const [lastEmotion, setLastEmotion] = useState(null);
 
-  const openModal   = () => setModalOpen(true);
-  const currentPage = VALID_PAGES.includes(page) ? page : "home";
+  const openModal = () => setModalOpen(true);
+
+  // Override navigate so "pricing" opens modal instead of routing
+  const handleNavigate = (dest) => {
+    if (dest === "pricing") { setPricingOpen(true); return; }
+    navigate(dest);
+  };
 
   const handleSubmitSuccess = ({ emotion, intensity, lgu_id }) => {
     setLastEmotion(emotion);
     if (user && hasAccess) {
       savePersonalSubmission({ user_id: user.id, emotion, intensity, lgu_id }).catch(() => {});
     }
-    if (!user) {
-      setTimeout(() => setPromptOpen(true), 400);
-    }
+    if (!user) setTimeout(() => setPromptOpen(true), 400);
   };
 
-  // Expired state — logged in but no access
   const isExpired = user && !hasAccess;
+  const currentPage = VALID_PAGES.includes(page) ? page : "home";
 
   const pages = {
-    home:               <HomePage      navigate={navigate} openModal={openModal} />,
-    dashboard:          <DashboardPage navigate={navigate} />,
+    home:               <HomePage      navigate={handleNavigate} openModal={openModal} />,
+    dashboard:          <DashboardPage navigate={handleNavigate} />,
     map:                <MapPage       openModal={openModal} />,
     trends:             <TrendsPage />,
     seasonal:           <SeasonalPage />,
@@ -79,16 +84,16 @@ export default function App() {
     contact:            <ContactPage />,
     personal: user
       ? <>
-          {/* Always render dashboard, blur it if expired */}
-          <div style={{ position:"relative", filter:isExpired?"blur(4px) brightness(0.4)":"none",
+          <div style={{ position:"relative",
+            filter:isExpired?"blur(4px) brightness(0.4)":"none",
             pointerEvents:isExpired?"none":"auto", transition:"filter 0.3s" }}>
-            <PersonalDashboard user={user} profile={profile} navigate={navigate} />
+            <PersonalDashboard user={user} profile={profile} navigate={handleNavigate} />
           </div>
-          {isExpired && <PricingOverlay plan={profile?.plan || "trial"} navigate={navigate} />}
+          {isExpired && <PricingOverlay plan={profile?.plan||"trial"} navigate={handleNavigate} />}
         </>
       : <RedirectToAuth onAuth={() => setAuthOpen(true)} />,
     account: user
-      ? <AccountPage user={user} profile={profile} navigate={navigate} />
+      ? <AccountPage user={user} profile={profile} navigate={handleNavigate} />
       : <RedirectToAuth onAuth={() => setAuthOpen(true)} />,
   };
 
@@ -109,35 +114,24 @@ export default function App() {
       `}</style>
 
       <Navigation
-        navigate={navigate}
+        navigate={handleNavigate}
         currentPage={currentPage}
         openModal={openModal}
         user={user}
-        onAccountClick={() => user ? navigate("account") : setAuthOpen(true)}
+        onAccountClick={() => user ? handleNavigate("account") : setAuthOpen(true)}
       />
 
       <PageWrapper page={currentPage}>
         {pages[currentPage]}
-        <Footer navigate={navigate} openModal={openModal} />
+        <Footer navigate={handleNavigate} openModal={openModal} />
       </PageWrapper>
 
-      <SubmissionModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onSuccess={handleSubmitSuccess}
-      />
-
-      <AuthModal
-        open={authOpen}
-        onClose={() => setAuthOpen(false)}
-      />
-
-      <PersonalPrompt
-        open={promptOpen}
-        emotion={lastEmotion}
+      <SubmissionModal open={modalOpen} onClose={() => setModalOpen(false)} onSuccess={handleSubmitSuccess} />
+      <AuthModal       open={authOpen}  onClose={() => setAuthOpen(false)} />
+      <PersonalPrompt  open={promptOpen} emotion={lastEmotion}
         onSignUp={() => { setPromptOpen(false); setAuthOpen(true); }}
-        onDismiss={() => setPromptOpen(false)}
-      />
+        onDismiss={() => setPromptOpen(false)} />
+      <PricingModal    open={pricingOpen} onClose={() => setPricingOpen(false)} />
     </div>
   );
 }
