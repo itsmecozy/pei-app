@@ -4,6 +4,7 @@ import { useT } from "../../context/ThemeContext";
 import { EMOTION_MAP } from "../../constants/emotions";
 import { useBreakpoint } from "../../hooks/useBreakpoint";
 import { Skeleton, EmptyState } from "../../components/shared/ui/index";
+import EmotionIcon from "../../components/shared/EmotionIcon";
 
 // ── Animated bar ──────────────────────────────────────────────────────────────
 function formatDateTime(dateStr) {
@@ -86,7 +87,7 @@ function EmotionHeatmap({ submissions }) {
             {hovered.date.toLocaleDateString("en-PH", { month:"short", day:"numeric" })}
             {hovered.emotion && (
               <span style={{ color:EMOTION_MAP[hovered.emotion]?.hex, marginLeft:"0.4rem" }}>
-                {EMOTION_MAP[hovered.emotion]?.emoji} {hovered.emotion}
+                {hovered.emotion}
               </span>
             )}
           </div>
@@ -248,10 +249,20 @@ function ShareCardModal({ open, onClose, submission, user }) {
     }
     ctx.globalAlpha = 1;
 
-    // Emotion emoji
-    ctx.font = "180px serif";
+    // Emotion icon — draw colored circle with initial letter (canvas can't render SVGs)
+    ctx.beginPath();
+    ctx.arc(W/2, 290, 90, 0, Math.PI * 2);
+    ctx.fillStyle = (em?.hex || "#f5a623") + "22";
+    ctx.fill();
+    ctx.strokeStyle = em?.hex || "#f5a623";
+    ctx.lineWidth = 4;
+    ctx.stroke();
+    ctx.font = "bold 100px serif";
+    ctx.fillStyle = em?.hex || "#f5a623";
     ctx.textAlign = "center";
-    ctx.fillText(em?.emoji || "◉", W/2, 340);
+    ctx.textBaseline = "middle";
+    ctx.fillText((em?.name?.[0] || "?").toUpperCase(), W/2, 290);
+    ctx.textBaseline = "alphabetic";
 
     // Emotion label
     ctx.font = "bold 96px serif";
@@ -409,7 +420,7 @@ export default function PersonalDashboard({ user, profile, navigate }) {
   const sorted   = stats ? Object.entries(stats.dist).sort((a,b) => b[1]-a[1]) : [];
 
   const trialDaysLeft = () => {
-    if (!profile || profile.plan !== "trial") return null;
+    if (!profile || profile.plan_activated_at) return null;
     return Math.max(0, 7 - Math.floor(
       (Date.now() - new Date(profile.trial_started_at)) / (1000*60*60*24)
     ));
@@ -457,7 +468,7 @@ export default function PersonalDashboard({ user, profile, navigate }) {
                 {daysLeft} days left in trial
               </div>
             )}
-            {profile?.plan === "trial" && (
+            {!profile?.plan_activated_at && (
               <button onClick={() => navigate("pricing")}
                 style={{ background:T.amber, color:"#000", border:"none",
                   padding:"0.35rem 0.75rem", fontFamily:"DM Mono", fontSize:"0.52rem",
@@ -563,8 +574,10 @@ export default function PersonalDashboard({ user, profile, navigate }) {
                         gridTemplateColumns:"110px 1fr 38px",
                         alignItems:"center", gap:"0.5rem" }}>
                         <span style={{ fontFamily:"DM Mono", fontSize:"0.5rem",
-                          color:T.muted, textTransform:"capitalize" }}>
-                          {em?.emoji} {key}
+                          color:T.muted, textTransform:"capitalize",
+                          display:"flex", alignItems:"center", gap:"0.35rem" }}>
+                          <EmotionIcon icon={em?.icon} color={em?.hex||T.muted} size={12} />
+                          {key}
                         </span>
                         <AnimatedBar pct={pct*100} hex={em?.hex||T.muted} delay={i*50} />
                         <span style={{ fontFamily:"DM Mono", fontSize:"0.54rem",
@@ -611,8 +624,10 @@ export default function PersonalDashboard({ user, profile, navigate }) {
                       <div style={{ background:`${em?.hex}12`, border:`1px solid ${em?.hex}22`,
                         padding:"0.18rem 0.45rem", fontFamily:"DM Mono", fontSize:"0.48rem",
                         color:em?.hex, textTransform:"capitalize", whiteSpace:"nowrap",
-                        overflow:"hidden", textOverflow:"ellipsis" }}>
-                        {em?.emoji} {s.emotion}
+                        overflow:"hidden", textOverflow:"ellipsis",
+                        display:"flex", alignItems:"center", gap:"0.3rem" }}>
+                        <EmotionIcon icon={em?.icon} color={em?.hex} size={11} />
+                        {s.emotion}
                       </div>
                       {/* Intensity dots */}
                       <div style={{ display:"flex", gap:2, alignItems:"center" }}>
@@ -690,8 +705,10 @@ export default function PersonalDashboard({ user, profile, navigate }) {
                     </div>
                     <div style={{ background:`${em?.hex}15`, border:`1px solid ${em?.hex}30`,
                       padding:"0.18rem 0.5rem", fontFamily:"DM Mono", fontSize:"0.5rem",
-                      color:em?.hex, textTransform:"capitalize" }}>
-                      {em?.emoji} {s.emotion}
+                      color:em?.hex, textTransform:"capitalize",
+                      display:"flex", alignItems:"center", gap:"0.3rem" }}>
+                      <EmotionIcon icon={em?.icon} color={em?.hex} size={12} />
+                      {s.emotion}
                     </div>
                     {bp !== "mobile" && (
                       <div style={{ display:"flex", gap:3 }}>
