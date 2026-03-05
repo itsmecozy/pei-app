@@ -1,10 +1,9 @@
 import { useState } from "react";
-import { T } from "./constants/tokens";
-import { useHashRouter } from "./hooks/useHashRouter";
-import { useAuth } from "./hooks/useAuth";
+import { useHashRouter }      from "./hooks/useHashRouter";
+import { useAuth }            from "./hooks/useAuth";
+import { useTheme }           from "./hooks/useTheme";
 import { savePersonalSubmission } from "./lib/supabase";
 
-// Shared components
 import GrainOverlay    from "./components/shared/ui/GrainOverlay";
 import Navigation      from "./components/shared/Navigation";
 import Footer          from "./components/shared/Footer";
@@ -13,36 +12,30 @@ import SubmissionModal from "./components/shared/SubmissionModal";
 import AuthModal       from "./components/shared/AuthModal";
 import PersonalPrompt  from "./components/shared/PersonalPrompt";
 import PricingModal    from "./components/shared/PricingModal";
+import PricingOverlay  from "./components/shared/PricingOverlay";
 
-// Pages — national index
 import HomePage      from "./pages/HomePage";
 import DashboardPage from "./pages/DashboardPage";
 import MapPage       from "./pages/MapPage";
 import { TrendsPage, SeasonalPage, EthicsPage, MethodologyPage } from "./pages/ContentPages";
+import { PrivacyPolicyPage, AnonymityFrameworkPage, DataMethodologyPage, ResearchAccessPage, ContactPage } from "./pages/legal/LegalPages";
 
-// Pages — legal
-import {
-  PrivacyPolicyPage,
-  AnonymityFrameworkPage,
-  DataMethodologyPage,
-  ResearchAccessPage,
-  ContactPage,
-} from "./pages/legal/LegalPages";
-
-// Pages — personal
 import PersonalDashboard from "./pages/personal/PersonalDashboard";
 import AccountPage       from "./pages/personal/AccountPage";
-import PricingOverlay    from "./components/shared/PricingOverlay";
+import SettingsPage      from "./pages/personal/SettingsPage";
 
 const VALID_PAGES = [
   "home","dashboard","map","trends","seasonal","ethics","methodology",
   "privacy","anonymity","data-methodology","research-access","contact",
-  "personal","account",
+  "personal","account","settings",
 ];
 
 export default function App() {
-  const { page, navigate } = useHashRouter();
+  const { page, navigate }        = useHashRouter();
   const { user, profile, hasAccess } = useAuth();
+  const { themeId, tokens, setTheme } = useTheme();
+
+  const T = tokens;
 
   const [modalOpen,   setModalOpen]   = useState(false);
   const [authOpen,    setAuthOpen]    = useState(false);
@@ -52,7 +45,6 @@ export default function App() {
 
   const openModal = () => setModalOpen(true);
 
-  // Override navigate so "pricing" opens modal instead of routing
   const handleNavigate = (dest) => {
     if (dest === "pricing") { setPricingOpen(true); return; }
     navigate(dest);
@@ -61,12 +53,12 @@ export default function App() {
   const handleSubmitSuccess = ({ emotion, intensity, lgu_id }) => {
     setLastEmotion(emotion);
     if (user && hasAccess) {
-      savePersonalSubmission({ user_id: user.id, emotion, intensity, lgu_id }).catch(() => {});
+      savePersonalSubmission({ user_id:user.id, emotion, intensity, lgu_id }).catch(()=>{});
     }
     if (!user) setTimeout(() => setPromptOpen(true), 400);
   };
 
-  const isExpired = user && !hasAccess;
+  const isExpired   = user && !hasAccess;
   const currentPage = VALID_PAGES.includes(page) ? page : "home";
 
   const pages = {
@@ -84,17 +76,17 @@ export default function App() {
     contact:            <ContactPage />,
     personal: user
       ? <>
-          <div style={{ position:"relative",
-            filter:isExpired?"blur(4px) brightness(0.4)":"none",
+          <div style={{ filter:isExpired?"blur(4px) brightness(0.4)":"none",
             pointerEvents:isExpired?"none":"auto", transition:"filter 0.3s" }}>
             <PersonalDashboard user={user} profile={profile} navigate={handleNavigate} />
           </div>
           {isExpired && <PricingOverlay plan={profile?.plan||"trial"} navigate={handleNavigate} />}
         </>
-      : <RedirectToAuth onAuth={() => setAuthOpen(true)} />,
+      : <RedirectToAuth T={T} onAuth={() => setAuthOpen(true)} />,
     account: user
       ? <AccountPage user={user} profile={profile} navigate={handleNavigate} />
-      : <RedirectToAuth onAuth={() => setAuthOpen(true)} />,
+      : <RedirectToAuth T={T} onAuth={() => setAuthOpen(true)} />,
+    settings: <SettingsPage themeId={themeId} setTheme={setTheme} />,
   };
 
   return (
@@ -103,14 +95,14 @@ export default function App() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Mono:wght@300;400;500&display=swap');
         *{box-sizing:border-box;margin:0;padding:0}
-        body{background:#07090f}
+        body{background:${T.bg};color:${T.text}}
         ::-webkit-scrollbar{width:4px}
-        ::-webkit-scrollbar-track{background:#07090f}
-        ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.08)}
-        select option{background:#0c1018}
-        textarea,input{font-family:'DM Mono',monospace!important}
-        input::placeholder{color:#5a6070}
-        textarea::placeholder{color:#5a6070}
+        ::-webkit-scrollbar-track{background:${T.bg}}
+        ::-webkit-scrollbar-thumb{background:rgba(128,128,128,0.15)}
+        select option{background:${T.surface}}
+        textarea,input{font-family:'DM Mono',monospace!important;color:${T.text}!important;background:${T.bg}!important}
+        input::placeholder{color:${T.muted}}
+        textarea::placeholder{color:${T.muted}}
       `}</style>
 
       <Navigation
@@ -118,7 +110,7 @@ export default function App() {
         currentPage={currentPage}
         openModal={openModal}
         user={user}
-        onAccountClick={() => user ? handleNavigate("account") : setAuthOpen(true)}
+        onAuthClick={() => setAuthOpen(true)}
       />
 
       <PageWrapper page={currentPage}>
@@ -126,9 +118,9 @@ export default function App() {
         <Footer navigate={handleNavigate} openModal={openModal} />
       </PageWrapper>
 
-      <SubmissionModal open={modalOpen} onClose={() => setModalOpen(false)} onSuccess={handleSubmitSuccess} />
-      <AuthModal       open={authOpen}  onClose={() => setAuthOpen(false)} />
-      <PersonalPrompt  open={promptOpen} emotion={lastEmotion}
+      <SubmissionModal open={modalOpen}   onClose={() => setModalOpen(false)}   onSuccess={handleSubmitSuccess} />
+      <AuthModal       open={authOpen}    onClose={() => setAuthOpen(false)} />
+      <PersonalPrompt  open={promptOpen}  emotion={lastEmotion}
         onSignUp={() => { setPromptOpen(false); setAuthOpen(true); }}
         onDismiss={() => setPromptOpen(false)} />
       <PricingModal    open={pricingOpen} onClose={() => setPricingOpen(false)} />
@@ -136,7 +128,7 @@ export default function App() {
   );
 }
 
-function RedirectToAuth({ onAuth }) {
+function RedirectToAuth({ T, onAuth }) {
   return (
     <div style={{ padding:"4rem 0", textAlign:"center" }}>
       <div style={{ fontFamily:"'Playfair Display',serif", fontSize:"2rem",
