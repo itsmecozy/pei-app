@@ -14,7 +14,7 @@ const NAV_ITEMS = [
 ];
 
 // ─── DESKTOP: Fixed sidebar + top-right avatar bar ────────────────────────────
-function DesktopNav({ navigate, currentPage, openModal, user, onAuthClick }) {
+function DesktopNav({ navigate, currentPage, openModal, user, profile, onAuthClick }) {
   const T = useT();
 
   return (
@@ -91,7 +91,7 @@ function DesktopNav({ navigate, currentPage, openModal, user, onAuthClick }) {
         display:"flex", alignItems:"center", justifyContent:"flex-end",
         padding:"0 1.5rem", borderBottom:`1px solid ${T.border}`,
         background:T.bg }}>
-        <AvatarMenu user={user} navigate={navigate}
+        <AvatarMenu user={user} profile={profile} navigate={navigate}
           currentPage={currentPage} onAuthClick={onAuthClick} />
       </div>
 
@@ -101,7 +101,7 @@ function DesktopNav({ navigate, currentPage, openModal, user, onAuthClick }) {
 }
 
 // ─── MOBILE top bar ───────────────────────────────────────────────────────────
-function MobileNav({ navigate, currentPage, openModal, user, onAuthClick }) {
+function MobileNav({ navigate, currentPage, openModal, user, profile, onAuthClick }) {
   const T = useT();
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
@@ -148,7 +148,7 @@ function MobileNav({ navigate, currentPage, openModal, user, onAuthClick }) {
             style={{ background:T.amber, color:"#000", border:"none",
               padding:"0.3rem 0.55rem", fontFamily:"DM Mono", fontSize:"0.52rem",
               fontWeight:500, letterSpacing:"0.06em", cursor:"pointer" }}>+</button>
-          <AvatarMenu user={user} navigate={navigate}
+          <AvatarMenu user={user} profile={profile} navigate={navigate}
             currentPage={currentPage} onAuthClick={onAuthClick} />
         </div>
       </nav>
@@ -161,12 +161,12 @@ function MobileNav({ navigate, currentPage, openModal, user, onAuthClick }) {
 }
 
 // ─── EXPORT ───────────────────────────────────────────────────────────────────
-export default function Navigation({ navigate, currentPage, openModal, user, onAuthClick }) {
+export default function Navigation({ navigate, currentPage, openModal, user, profile, onAuthClick }) {
   const bp = useBreakpoint();
   if (bp === "desktop") {
     return <DesktopNav navigate={navigate} currentPage={currentPage}
-      openModal={openModal} user={user} onAuthClick={onAuthClick} />;
+      openModal={openModal} user={user} profile={profile} onAuthClick={onAuthClick} />;
   }
   return <MobileNav navigate={navigate} currentPage={currentPage}
-    openModal={openModal} user={user} onAuthClick={onAuthClick} />;
+    openModal={openModal} user={user} profile={profile} onAuthClick={onAuthClick} />;
 }

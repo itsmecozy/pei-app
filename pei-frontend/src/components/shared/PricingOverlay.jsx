@@ -1,7 +1,8 @@
-import { T } from "../../constants/tokens";
+import { useT } from "../../context/ThemeContext";
 import { useBreakpoint } from "../../hooks/useBreakpoint";
 
 export default function PricingOverlay({ plan, navigate }) {
+  const T = useT();
   const bp = useBreakpoint();
 
   const plans = [

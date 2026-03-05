@@ -1,7 +1,9 @@
-import { T } from "../../constants/tokens";
+import { useT } from "../../context/ThemeContext";
 import { EMOTION_MAP } from "../../constants/emotions";
+import EmotionIcon from "./EmotionIcon";
 
 export default function PersonalPrompt({ open, emotion, onSignUp, onDismiss }) {
+  const T = useT();
   if (!open) return null;
   const em = EMOTION_MAP[emotion];
 
@@ -20,7 +22,12 @@ export default function PersonalPrompt({ open, emotion, onSignUp, onDismiss }) {
 
         <div style={{ padding:"1.5rem" }}>
           <div style={{ display:"flex", alignItems:"center", gap:"0.75rem", marginBottom:"1rem" }}>
-            <div style={{ fontSize:"2rem" }}>{em?.emoji || "◉"}</div>
+            <div style={{ width:40, height:40, borderRadius:"50%",
+              background:`${em?.hex || T.amber}15`,
+              border:`1px solid ${em?.hex || T.amber}30`,
+              display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+              <EmotionIcon icon={em?.icon} color={em?.hex || T.amber} size={20} />
+            </div>
             <div>
               <div style={{ fontFamily:"'Playfair Display',serif",
                 fontSize:"1rem", fontWeight:700, marginBottom:"0.15rem" }}>

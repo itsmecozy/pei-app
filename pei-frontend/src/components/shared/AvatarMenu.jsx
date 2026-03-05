@@ -1,12 +1,16 @@
 import { useState, useEffect, useRef } from "react";
 import { useT } from "../../context/ThemeContext";
 import { signOut } from "../../lib/supabase";
+import { getAvatarGradient } from "../../pages/personal/SettingsPage";
 
-export default function AvatarMenu({ user, navigate, currentPage, onAuthClick }) {
+export default function AvatarMenu({ user, profile, navigate, currentPage, onAuthClick }) {
   const T = useT();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
-  const initial = user?.email?.[0]?.toUpperCase();
+  const initial = (profile?.display_name || user?.email)?.[0]?.toUpperCase();
+  const avatarGrad = user
+    ? getAvatarGradient(profile?.avatar_color || "amber-teal")
+    : null;
 
   useEffect(() => {
     const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
@@ -34,9 +38,7 @@ export default function AvatarMenu({ user, navigate, currentPage, onAuthClick })
       {/* Avatar button */}
       <button onClick={() => setOpen(o => !o)}
         style={{ width:30, height:30, borderRadius:"50%", border:"none",
-          background: user
-            ? `linear-gradient(135deg, ${T.amber}, ${T.teal})`
-            : T.surface2,
+          background: avatarGrad || T.surface2,
           display:"flex", alignItems:"center", justifyContent:"center",
           cursor:"pointer", transition:"all 0.2s",
           outline: open ? `2px solid ${T.amber}` : "none", outlineOffset:2,
@@ -62,8 +64,15 @@ export default function AvatarMenu({ user, navigate, currentPage, onAuthClick })
               <>
                 <div style={{ fontFamily:"DM Mono", fontSize:"0.52rem", color:T.text,
                   overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-                  {user.email}
+                  {profile?.display_name || user.email}
                 </div>
+                {profile?.display_name && (
+                  <div style={{ fontFamily:"DM Mono", fontSize:"0.44rem", color:T.muted,
+                    overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap",
+                    marginTop:"0.1rem" }}>
+                    {user.email}
+                  </div>
+                )}
                 <div style={{ fontFamily:"DM Mono", fontSize:"0.46rem", color:T.muted,
                   marginTop:"0.15rem", letterSpacing:"0.08em", textTransform:"uppercase" }}>
                   Signed in

@@ -1,7 +1,8 @@
-import { T } from "../../constants/tokens";
+import { useT } from "../../context/ThemeContext";
 import { useBreakpoint } from "../../hooks/useBreakpoint";
 
 function FLink({ label, page, navigate }) {
+  const T = useT();
   return (
     <div onClick={() => navigate(page)}
       style={{ fontFamily:"DM Mono", fontSize:"0.58rem", color:T.muted,
@@ -14,6 +15,7 @@ function FLink({ label, page, navigate }) {
 }
 
 export default function Footer({ navigate, openModal }) {
+  const T = useT();
   const bp = useBreakpoint();
   return (
     <footer style={{ borderTop:`1px solid ${T.border}`, marginTop:"4rem", background:T.surface }}>

@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { signInWithEmail, signUpWithEmail, signInWithGoogle } from "../../lib/supabase";
-import { T } from "../../constants/tokens";
+import { useT } from "../../context/ThemeContext";
 
 export default function AuthModal({ open, onClose, defaultMode = "signup" }) {
+  const T = useT();
   const [mode, setMode]       = useState(defaultMode);
   const [email, setEmail]     = useState("");
   const [password, setPassword] = useState("");

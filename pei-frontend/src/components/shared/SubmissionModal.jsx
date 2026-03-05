@@ -3,8 +3,9 @@ import { submitEmotion, searchLGUs } from "../../lib/supabase";
 import { useT } from "../../context/ThemeContext";
 import { EMOTIONS } from "../../constants/emotions";
 import { useBreakpoint } from "../../hooks/useBreakpoint";
+import EmotionIcon from "./EmotionIcon";
 
-export default function SubmissionModal({ open, onClose, onSuccess }) {
+export default function SubmissionModal({ open, onClose, onSuccess, homeLguId, homeLguName }) {
   const T = useT();
   const [step, setStep]               = useState(1);
   const [query, setQuery]             = useState("");
@@ -151,6 +152,20 @@ export default function SubmissionModal({ open, onClose, onSuccess }) {
                     </div>
                   )}
 
+                  {/* Location change warning */}
+                  {selectedLgu && homeLguId && selectedLgu.id !== homeLguId && (
+                    <div style={{ marginTop:"0.4rem", background:`${T.rose}08`,
+                      border:`1px solid ${T.rose}25`, padding:"0.6rem 0.7rem",
+                      fontFamily:"DM Mono", fontSize:"0.54rem", color:T.rose,
+                      display:"flex", alignItems:"flex-start", gap:"0.5rem", lineHeight:1.6 }}>
+                      <span style={{ flexShrink:0 }}>⚠</span>
+                      <span>
+                        You're submitting from <strong>{selectedLgu.name}</strong> — your home area is <strong>{homeLguName || "elsewhere"}</strong>. 
+                        That's fine — your submission stays anonymous either way.
+                      </span>
+                    </div>
+                  )}
+
                   <div style={{ marginTop:"0.75rem", background:`${T.teal}08`,
                     border:`1px solid ${T.teal}15`, padding:"0.6rem 0.7rem",
                     fontFamily:"DM Mono", fontSize:"0.54rem", color:T.muted }}>
@@ -173,8 +188,14 @@ export default function SubmissionModal({ open, onClose, onSuccess }) {
                         style={{ border:`1px solid ${emotion===em.key?em.hex:T.border}`,
                           background:emotion===em.key?`${em.hex}12`:T.bg,
                           padding:"0.6rem 0.35rem", cursor:"pointer",
-                          textAlign:"center", transition:"all 0.2s" }}>
-                        <div style={{ fontSize:"1.3rem", marginBottom:"0.2rem" }}>{em.emoji}</div>
+                          textAlign:"center", transition:"all 0.2s",
+                          display:"flex", flexDirection:"column",
+                          alignItems:"center", gap:"0.35rem" }}>
+                        <EmotionIcon
+                          icon={em.icon}
+                          color={emotion===em.key ? em.hex : T.muted}
+                          size={22}
+                        />
                         <div style={{ fontFamily:"DM Mono", fontSize:"0.46rem",
                           color:emotion===em.key?em.hex:T.muted,
                           letterSpacing:"0.06em", textTransform:"uppercase" }}>{em.name}</div>
