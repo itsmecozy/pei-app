@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { getNational } from "../lib/supabase";
-import { T } from "../constants/tokens";
+import { useT } from "../context/ThemeContext";
 import { EMOTIONS, EMOTION_MAP } from "../constants/emotions";
 import { useBreakpoint } from "../hooks/useBreakpoint";
 import { DataBadge, Skeleton } from "../components/shared/ui/index";
 
 export default function HomePage({ navigate, openModal }) {
+  const T = useT();
   const bp = useBreakpoint();
   const [national, setNational]       = useState(null);
   const [loading, setLoading]         = useState(true);

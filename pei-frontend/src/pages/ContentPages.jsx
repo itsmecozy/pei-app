@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react";
 import { getLGUAggregations } from "../lib/supabase";
-import { T } from "../constants/tokens";
+import { useT } from "../context/ThemeContext";
 import { EMOTIONS, EMOTION_MAP } from "../constants/emotions";
 import { useBreakpoint } from "../hooks/useBreakpoint";
 import { useInView } from "../hooks/useInView";
 import { PageHeader, EmotionBar, ScoreCard, Skeleton, EmptyState } from "../components/shared/ui/index";
+import EmotionIcon from "../components/shared/EmotionIcon";
 
 // ─── TRENDS ───────────────────────────────────────────────────────────────────
 export function TrendsPage() {
+  const T = useT();
   const bp = useBreakpoint();
   const [lgus, setLgus]         = useState([]);
   const [selected, setSelected] = useState(null);
@@ -199,6 +201,7 @@ const CULTURAL = [
 ];
 
 export function SeasonalPage() {
+  const T = useT();
   const bp = useBreakpoint();
   const [ref, inView]       = useInView(0.05);
   const [hovered, setHovered] = useState(null);
@@ -239,8 +242,11 @@ export function SeasonalPage() {
                 )}
                 <div style={{ fontFamily:"DM Mono", fontSize:"0.5rem", color:T.muted,
                   marginBottom:"0.5rem", marginTop:isNow?"0.5rem":0 }}>{s.month}</div>
-                <div style={{ fontSize:"1.2rem", marginBottom:"0.4rem" }}>
-                  {EMOTIONS.find(e=>e.name===s.dominant)?.emoji||"●"}
+                <div style={{ display:"flex", alignItems:"center", justifyContent:"center",
+                  marginBottom:"0.4rem", height:"1.4rem" }}>
+                  {(() => { const em = EMOTIONS.find(e=>e.name===s.dominant); return em
+                    ? <EmotionIcon icon={em.icon} color={em.hex} size={18} />
+                    : <span style={{ color:T.muted }}>●</span>; })()}
                 </div>
                 <div style={{ fontFamily:"DM Mono", fontSize:"0.44rem", color:s.hex,
                   letterSpacing:"0.06em", writingMode:"vertical-rl",
@@ -294,6 +300,7 @@ export function SeasonalPage() {
 
 // ─── ETHICS ───────────────────────────────────────────────────────────────────
 export function EthicsPage() {
+  const T = useT();
   const bp = useBreakpoint();
   const [ref, inView] = useInView();
   const principles = [
@@ -340,6 +347,7 @@ export function EthicsPage() {
 
 // ─── METHODOLOGY ──────────────────────────────────────────────────────────────
 export function MethodologyPage() {
+  const T = useT();
   const bp = useBreakpoint();
   const [ref, inView] = useInView();
   const sections = [

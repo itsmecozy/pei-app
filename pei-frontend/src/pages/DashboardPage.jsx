@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
 import { getNational, getLGUAggregations } from "../lib/supabase";
-import { T } from "../constants/tokens";
+import { useT } from "../context/ThemeContext";
 import { EMOTION_MAP } from "../constants/emotions";
 import { useBreakpoint } from "../hooks/useBreakpoint";
 import { useInView } from "../hooks/useInView";
 import { PageHeader, Skeleton, EmptyState } from "../components/shared/ui/index";
+import EmotionIcon from "../components/shared/EmotionIcon";
 
 export default function DashboardPage({ navigate }) {
+  const T = useT();
   const bp = useBreakpoint();
   const [ref, inView]           = useInView();
   const [national, setNational] = useState(null);
@@ -53,9 +55,7 @@ export default function DashboardPage({ navigate }) {
           { label:"Hope / Despair Ratio", value:national?.hdr, desc:"National HDR",
             color:national?.hdr>1?T.teal:T.rose, fill:Math.min((national?.hdr||0)/2*100,100) },
           { label:"Dominant Emotion",
-            value:national?.dominant_emotion
-              ? (EMOTION_MAP[national.dominant_emotion]?.emoji + " " + national.dominant_emotion)
-              : null,
+            value:national?.dominant_emotion ? national.dominant_emotion : null,
             desc:"This week", color:EMOTION_MAP[national?.dominant_emotion]?.hex||T.muted, fill:60 },
           { label:"Total Submissions", value:national?.submission_count?.toLocaleString(),
             desc:`${national?.active_lgus||0} active LGUs`, color:T.text, fill:40 },
@@ -133,8 +133,10 @@ export default function DashboardPage({ navigate }) {
                   </div>
                   <div style={{ fontFamily:"'Playfair Display',serif", fontSize:"0.9rem",
                     fontWeight:700, color:em?.hex||T.amber, marginBottom:"0.1rem",
-                    textTransform:"capitalize" }}>
-                    {em?.emoji} {dominant}
+                    textTransform:"capitalize",
+                    display:"flex", alignItems:"center", gap:"0.35rem" }}>
+                    <EmotionIcon icon={em?.icon} color={em?.hex||T.amber} size={15} />
+                    {dominant}
                   </div>
                   <div style={{ fontFamily:"DM Mono", fontSize:"0.54rem", color:T.muted }}>
                     {Math.round((dist[dominant]||0)*100)}% dominant

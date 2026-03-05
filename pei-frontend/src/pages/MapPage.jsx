@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { getLGUAggregations } from "../lib/supabase";
-import { T } from "../constants/tokens";
+import { useT } from "../context/ThemeContext";
 import { EMOTION_MAP } from "../constants/emotions";
 import { useBreakpoint } from "../hooks/useBreakpoint";
 import { useInView } from "../hooks/useInView";
 import { PageHeader, EmotionBar, ScoreCard, Skeleton, EmptyState } from "../components/shared/ui/index";
 
 export default function MapPage({ openModal }) {
+  const T = useT();
   const bp = useBreakpoint();
   const [lgus, setLgus]               = useState([]);
   const [loading, setLoading]         = useState(true);
@@ -60,8 +61,11 @@ export default function MapPage({ openModal }) {
           {em && (
             <div style={{ background:`${em.hex}10`, border:`1px solid ${em.hex}30`,
               padding:"0.5rem 0.65rem", marginBottom:"0.85rem",
-              fontFamily:"DM Mono", fontSize:"0.56rem", color:em.hex, textTransform:"capitalize" }}>
-              ◈ Dominant: {em.emoji} {dominant} · {Math.round((dist[dominant]||0)*100)}%
+              fontFamily:"DM Mono", fontSize:"0.56rem", color:em.hex, textTransform:"capitalize",
+              display:"flex", alignItems:"center", gap:"0.4rem" }}>
+              ◈ Dominant:
+              <EmotionIcon icon={em.icon} color={em.hex} size={13} />
+              {dominant} · {Math.round((dist[dominant]||0)*100)}%
             </div>
           )}
           <div style={{ display:"flex", flexDirection:"column", gap:"0.5rem" }}>
