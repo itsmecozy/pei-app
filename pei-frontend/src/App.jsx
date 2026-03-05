@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useHashRouter }         from "./hooks/useHashRouter";
 import { useAuth }               from "./hooks/useAuth";
 import { useTheme }              from "./hooks/useTheme";
@@ -44,6 +44,16 @@ export default function App() {
   const [lastEmotion, setLastEmotion] = useState(null);
 
   const openModal   = () => setModalOpen(true);
+
+  // Listen for SW message to open submit modal (from notification tap)
+  useEffect(() => {
+    if (!("serviceWorker" in navigator)) return;
+    const handler = (event) => {
+      if (event.data?.type === "OPEN_SUBMIT_MODAL") setModalOpen(true);
+    };
+    navigator.serviceWorker.addEventListener("message", handler);
+    return () => navigator.serviceWorker.removeEventListener("message", handler);
+  }, []);
   const handleNavigate = (dest) => {
     if (dest === "pricing") { setPricingOpen(true); return; }
     navigate(dest);
