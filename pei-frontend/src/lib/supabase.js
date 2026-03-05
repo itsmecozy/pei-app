@@ -122,17 +122,37 @@ export async function getSession() {
 export async function getUserProfile(user_id) {
   const { data, error } = await supabase
     .from('user_profiles')
-    .select('*')
+    .select('*, lgus:home_lgu_id(id, name)')
     .eq('id', user_id)
     .single()
   if (error) return null
+  // Flatten home_lgu_name for convenience
+  if (data?.lgus) {
+    data.home_lgu_name = data.lgus.name
+    delete data.lgus
+  }
+  return data
+}
+
+export async function updateUserProfile(user_id, updates) {
+  const { data, error } = await supabase
+    .from('user_profiles')
+    .update(updates)
+    .eq('id', user_id)
+    .select('*, lgus:home_lgu_id(id, name)')
+    .single()
+  if (error) throw error
+  if (data?.lgus) {
+    data.home_lgu_name = data.lgus.name
+    delete data.lgus
+  }
   return data
 }
 
 export async function createUserProfile(user_id) {
   const { data, error } = await supabase
     .from('user_profiles')
-    .insert({ id: user_id, plan: 'trial', trial_started_at: new Date().toISOString() })
+    .insert({ id: user_id, trial_started_at: new Date().toISOString() })
     .select()
     .single()
   if (error) throw error
@@ -141,11 +161,19 @@ export async function createUserProfile(user_id) {
 
 export function isTrialActive(profile) {
   if (!profile) return false
-  if (profile.plan === 'seasonal' || profile.plan === 'lifetime') return true
+  // plan_activated_at is set when user pays — present means full access
+  if (profile.plan_activated_at) return true
+  if (!profile.trial_started_at) return false
   const started = new Date(profile.trial_started_at)
   const now = new Date()
   const days = (now - started) / (1000 * 60 * 60 * 24)
   return days <= 7
+}
+
+// Derive display tier from profile for UI (paid vs trial)
+export function getPlanTier(profile) {
+  if (!profile) return 'trial'
+  return profile.plan_activated_at ? 'paid' : 'trial'
 }
 
 // ─── PERSONAL SUBMISSIONS ─────────────────────────────────────────────────────
