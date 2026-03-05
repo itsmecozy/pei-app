@@ -583,33 +583,50 @@ export default function PersonalDashboard({ user, profile, navigate }) {
                   textTransform:"uppercase", color:T.muted, marginBottom:"0.9rem" }}>
                   Recent Entries
                 </div>
+                {/* Table header */}
+                <div style={{ display:"grid", gridTemplateColumns:"80px 1fr 60px 24px",
+                  gap:"0.5rem", padding:"0 0 0.4rem 0",
+                  borderBottom:`1px solid ${T.border}`, marginBottom:"0.1rem" }}>
+                  {["Date & Time","Emotion","Level",""].map((h,i) => (
+                    <div key={i} style={{ fontFamily:"DM Mono", fontSize:"0.42rem",
+                      letterSpacing:"0.1em", textTransform:"uppercase",
+                      color:T.muted, opacity:0.6 }}>{h}</div>
+                  ))}
+                </div>
                 {submissions.slice(0,6).map((s,i) => {
                   const em = EMOTION_MAP[s.emotion];
                   return (
-                    <div key={i} style={{ display:"flex", alignItems:"center",
-                      gap:"0.75rem", padding:"0.5rem 0",
+                    <div key={i} style={{ display:"grid",
+                      gridTemplateColumns:"80px 1fr 60px 24px",
+                      gap:"0.5rem", alignItems:"center",
+                      padding:"0.45rem 0",
                       borderBottom: i<5 ? `1px solid ${T.border}` : "none" }}>
+                      {/* DateTime */}
                       <div style={{ fontFamily:"DM Mono", fontSize:"0.44rem",
-                        color:T.muted, minWidth:52, lineHeight:1.5 }}>
+                        color:T.muted, lineHeight:1.55 }}>
                         <div>{formatDateTime(s.created_at).date}</div>
-                        <div style={{ opacity:0.6 }}>{formatDateTime(s.created_at).time}</div>
+                        <div style={{ opacity:0.55 }}>{formatDateTime(s.created_at).time}</div>
                       </div>
-                      <span style={{ background:`${em?.hex}15`, border:`1px solid ${em?.hex}25`,
-                        padding:"0.15rem 0.45rem", fontFamily:"DM Mono", fontSize:"0.48rem",
-                        color:em?.hex, textTransform:"capitalize", whiteSpace:"nowrap" }}>
+                      {/* Emotion */}
+                      <div style={{ background:`${em?.hex}12`, border:`1px solid ${em?.hex}22`,
+                        padding:"0.18rem 0.45rem", fontFamily:"DM Mono", fontSize:"0.48rem",
+                        color:em?.hex, textTransform:"capitalize", whiteSpace:"nowrap",
+                        overflow:"hidden", textOverflow:"ellipsis" }}>
                         {em?.emoji} {s.emotion}
-                      </span>
-                      <div style={{ display:"flex", gap:2 }}>
+                      </div>
+                      {/* Intensity dots */}
+                      <div style={{ display:"flex", gap:2, alignItems:"center" }}>
                         {[1,2,3,4,5].map(n => (
-                          <div key={n} style={{ width:5, height:5, borderRadius:"50%",
+                          <div key={n} style={{ width:5, height:5, borderRadius:"50%", flexShrink:0,
                             background: n<=s.intensity ? em?.hex : "rgba(128,128,128,0.15)" }} />
                         ))}
                       </div>
+                      {/* Share */}
                       <button onClick={() => setShareTarget(s)}
-                        style={{ marginLeft:"auto", background:"none", border:"none",
-                          color:T.muted, cursor:"pointer", fontSize:"0.7rem",
-                          padding:"0.1rem 0.3rem", transition:"color 0.2s" }}
-                        title="Share this feeling"
+                        style={{ background:"none", border:"none", color:T.muted,
+                          cursor:"pointer", fontSize:"0.7rem", padding:0,
+                          transition:"color 0.15s", textAlign:"center" }}
+                        title="Share"
                         onMouseEnter={e=>e.currentTarget.style.color=T.amber}
                         onMouseLeave={e=>e.currentTarget.style.color=T.muted}>
                         ↗
