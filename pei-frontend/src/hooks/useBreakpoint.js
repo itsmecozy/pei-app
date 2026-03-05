@@ -1,17 +1,20 @@
 import { useState, useEffect } from "react";
 
 export function useBreakpoint() {
-  const [bp, setBp] = useState(() => {
+  const getBreakpoint = () => {
     const w = window.innerWidth;
-    return w < 640 ? "mobile" : w < 1024 ? "tablet" : "desktop";
-  });
+    if (w >= 1024) return "desktop";
+    if (w >= 640)  return "tablet";
+    return "mobile";
+  };
+
+  const [bp, setBp] = useState(getBreakpoint);
+
   useEffect(() => {
-    const update = () => {
-      const w = window.innerWidth;
-      setBp(w < 640 ? "mobile" : w < 1024 ? "tablet" : "desktop");
-    };
-    window.addEventListener("resize", update, { passive: true });
-    return () => window.removeEventListener("resize", update);
+    const handler = () => setBp(getBreakpoint());
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
   }, []);
+
   return bp;
 }
