@@ -117,24 +117,12 @@ export default function DonateButton() {
                   </span>
                 </div>
                 <div style={{ padding:"1rem", textAlign:"center" }}>
-                  {/* QR placeholder — replace with real QR image later */}
-                  <div style={{ width:120, height:120, margin:"0 auto 0.75rem",
-                    background:T.surface2, border:`1px dashed ${T.border}`,
-                    display:"flex", alignItems:"center", justifyContent:"center",
-                    flexDirection:"column", gap:"0.35rem" }}>
-                    <span style={{ fontSize:"1.8rem", opacity:0.3 }}>⊞</span>
-                    <span style={{ fontFamily:"DM Mono", fontSize:"0.44rem",
-                      color:T.muted, textAlign:"center", lineHeight:1.5 }}>
-                      QR code<br/>coming soon
-                    </span>
-                  </div>
-                  <div style={{ fontFamily:"DM Mono", fontSize:"0.52rem",
-                    color:T.muted, lineHeight:1.6 }}>
-                    Or send to:{" "}
-                    <span style={{ color:T.text, fontWeight:500 }}>
-                      blueskyhorizon.seven@gmail.com
-                    </span>
-                  </div>
+                  <img
+                    src="/qr-instapay.jpg"
+                    alt="InstaPay QR Code"
+                    style={{ width:160, height:160, objectFit:"contain",
+                      display:"block", margin:"0 auto" }}
+                  />
                 </div>
               </div>
 
