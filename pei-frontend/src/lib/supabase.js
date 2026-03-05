@@ -8,11 +8,15 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 // ─── ANONYMOUS INDEX ──────────────────────────────────────────────────────────
 
 export async function submitEmotion({ lgu_id, emotion, intensity, text }) {
+  // Send user's JWT if signed in — Edge Function uses this for tiered rate limiting
+  const { data: { session } } = await supabase.auth.getSession()
+  const token = session?.access_token || SUPABASE_ANON_KEY
+
   const response = await fetch(`${SUPABASE_URL}/functions/v1/submit-emotion`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      'Authorization': `Bearer ${token}`,
     },
     body: JSON.stringify({ lgu_id, emotion, intensity, text }),
   })
