@@ -1,0 +1,93 @@
+import { T } from "../../constants/tokens";
+import { EMOTION_MAP } from "../../constants/emotions";
+
+export default function PersonalPrompt({ open, emotion, onSignUp, onDismiss }) {
+  if (!open) return null;
+  const em = EMOTION_MAP[emotion];
+
+  return (
+    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.7)",
+      backdropFilter:"blur(8px)", zIndex:350,
+      display:"flex", alignItems:"flex-end", justifyContent:"center",
+      padding:"0 0 2rem" }}
+      onClick={e => { if(e.target===e.currentTarget) onDismiss(); }}>
+      <div style={{ background:T.surface, border:`1px solid ${T.border}`,
+        maxWidth:480, width:"calc(100% - 2rem)",
+        animation:"slideUp 0.4s cubic-bezier(.4,0,.2,1)" }}>
+
+        {/* Top accent */}
+        <div style={{ height:2, background:`linear-gradient(to right, ${T.amber}, ${T.teal})` }} />
+
+        <div style={{ padding:"1.5rem" }}>
+          <div style={{ display:"flex", alignItems:"center", gap:"0.75rem", marginBottom:"1rem" }}>
+            <div style={{ fontSize:"2rem" }}>{em?.emoji || "◉"}</div>
+            <div>
+              <div style={{ fontFamily:"'Playfair Display',serif",
+                fontSize:"1rem", fontWeight:700, marginBottom:"0.15rem" }}>
+                You've been counted.
+              </div>
+              <div style={{ fontFamily:"DM Mono", fontSize:"0.54rem", color:T.muted }}>
+                Your {emotion} was added to the national index.
+              </div>
+            </div>
+          </div>
+
+          <div style={{ background:T.surface2, border:`1px solid ${T.border}`,
+            padding:"0.85rem 1rem", marginBottom:"1.25rem" }}>
+            <div style={{ fontFamily:"DM Mono", fontSize:"0.52rem", letterSpacing:"0.12em",
+              textTransform:"uppercase", color:T.amber, marginBottom:"0.4rem" }}>
+              Want to track how you've been feeling?
+            </div>
+            <p style={{ fontFamily:"DM Mono", fontSize:"0.6rem", color:T.muted,
+              lineHeight:1.7, margin:0 }}>
+              Your submission stays anonymous in the national index.
+              A personal account lets you see your own emotional patterns over time — privately.
+            </p>
+          </div>
+
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)",
+            gap:"0.4rem", marginBottom:"1.1rem" }}>
+            {[
+              { label:"Free Trial", value:"7 days",       color:T.teal    },
+              { label:"Seasonal",   value:"₱49 · 3 mo",  color:T.amber   },
+              { label:"Lifetime",   value:"₱99 · forever", color:"#a78bfa" },
+            ].map((p,i) => (
+              <div key={i} style={{ background:T.bg, border:`1px solid ${T.border}`,
+                padding:"0.6rem 0.4rem", textAlign:"center" }}>
+                <div style={{ fontFamily:"DM Mono", fontSize:"0.44rem",
+                  letterSpacing:"0.1em", textTransform:"uppercase",
+                  color:T.muted, marginBottom:"0.2rem" }}>{p.label}</div>
+                <div style={{ fontFamily:"'Playfair Display',serif",
+                  fontSize:"0.72rem", fontWeight:700, color:p.color }}>{p.value}</div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display:"flex", gap:"0.5rem" }}>
+            <button onClick={onSignUp}
+              style={{ flex:1, background:T.amber, color:"#000", border:"none",
+                padding:"0.6rem", fontFamily:"DM Mono", fontSize:"0.58rem",
+                fontWeight:500, letterSpacing:"0.08em", textTransform:"uppercase",
+                cursor:"pointer", transition:"all 0.2s" }}
+              onMouseEnter={e=>e.currentTarget.style.background="#fff"}
+              onMouseLeave={e=>e.currentTarget.style.background=T.amber}>
+              Start Free Trial →
+            </button>
+            <button onClick={onDismiss}
+              style={{ background:"none", border:`1px solid ${T.border}`,
+                color:T.muted, padding:"0.6rem 1rem", fontFamily:"DM Mono",
+                fontSize:"0.56rem", letterSpacing:"0.06em", cursor:"pointer",
+                transition:"all 0.2s" }}
+              onMouseEnter={e=>e.currentTarget.style.color=T.text}
+              onMouseLeave={e=>e.currentTarget.style.color=T.muted}>
+              Maybe later
+            </button>
+          </div>
+        </div>
+      </div>
+      <style>{`
+        @keyframes slideUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+      `}</style>
+    </div>
+  );
+}
