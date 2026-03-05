@@ -44,7 +44,7 @@ export default function AvatarMenu({ user, navigate, currentPage, onAuthClick })
         onMouseEnter={e=>e.currentTarget.style.opacity="0.85"}
         onMouseLeave={e=>e.currentTarget.style.opacity="1"}>
         {user
-          ? <span style={{ fontFamily:"DM Mono", fontSize:"0.6rem", fontWeight:700, color:"#000" }}>{initial}</span>
+          ? <span style={{ fontFamily:"DM Mono", fontSize:"0.6rem", fontWeight:700, color: T.avatarText || "#000" }}>{initial}</span>
           : <span style={{ color:T.muted, fontSize:"0.8rem" }}>◌</span>
         }
       </button>
