@@ -384,17 +384,19 @@ export default function PersonalDashboard({ user, profile, navigate }) {
   const [shareTarget, setShareTarget] = useState(null);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user?.id) return;
+    setLoading(true);
+    setSubmissions([]);
+    setStats(null);
     Promise.all([
       getPersonalSubmissions(user.id),
       getPersonalStats(user.id),
     ]).then(([subs, st]) => {
       setSubmissions(subs);
       setStats(st);
-      // Update streak in DB
       if (subs.length > 0) updateStreak(user.id).catch(() => {});
     }).finally(() => setLoading(false));
-  }, [user]);
+  }, [user?.id]);
 
   const esiColor = v => v > 0.6 ? "#10b981" : v > 0.4 ? T.amber : T.rose;
   const sorted   = stats ? Object.entries(stats.dist).sort((a,b) => b[1]-a[1]) : [];
