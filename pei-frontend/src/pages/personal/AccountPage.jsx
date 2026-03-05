@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { T } from "../../constants/tokens";
+import { useT } from "../../context/ThemeContext";
 import { useBreakpoint } from "../../hooks/useBreakpoint";
 import { signOut } from "../../lib/supabase";
 
 function PlanBadge({ plan }) {
+  const T = useT();
   const configs = {
     trial:    { label:"Free Trial",   color:T.teal,    bg:`${T.teal}12`    },
     seasonal: { label:"Seasonal",     color:T.amber,   bg:`${T.amber}12`   },
@@ -34,6 +35,7 @@ function DaysBar({ pct, color }) {
 }
 
 export default function AccountPage({ user, profile, navigate }) {
+  const T = useT();
   const bp = useBreakpoint();
 
   const getDaysLeft = () => {
@@ -99,17 +101,7 @@ export default function AccountPage({ user, profile, navigate }) {
           fontSize:"clamp(1.6rem,3.5vw,2.8rem)", fontWeight:900,
           letterSpacing:"-0.025em", lineHeight:1.1 }}>
           Your Account
-
         </h1>
-
-          <button onClick={() => navigate("personal")}
-  style={{ marginTop:"0.75rem", background:"none", border:`1px solid ${T.amber}`,
-    color:T.amber, padding:"0.35rem 0.9rem", fontFamily:"DM Mono",
-    fontSize:"0.52rem", letterSpacing:"0.08em", textTransform:"uppercase",
-    cursor:"pointer" }}>
-  ← View My Dashboard
-</button>
-        
       </div>
 
       <div style={{ display:"grid",

@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { getPersonalSubmissions, getPersonalStats, signOut } from "../../lib/supabase";
-import { T } from "../../constants/tokens";
+import { getPersonalSubmissions, getPersonalStats } from "../../lib/supabase";
+import { useT } from "../../context/ThemeContext";
 import { EMOTION_MAP } from "../../constants/emotions";
 import { useBreakpoint } from "../../hooks/useBreakpoint";
 import { Skeleton, EmptyState } from "../../components/shared/ui/index";
 
 function AnimatedBar({ pct, hex, delay = 0 }) {
+  const T = useT();
   const [w, setW] = useState(0);
   useEffect(() => {
     const t = setTimeout(() => {
@@ -28,6 +29,7 @@ function AnimatedBar({ pct, hex, delay = 0 }) {
 }
 
 export default function PersonalDashboard({ user, profile, navigate }) {
+  const T = useT();
   const bp = useBreakpoint();
   const [tab, setTab]                 = useState("overview");
   const [submissions, setSubmissions] = useState([]);

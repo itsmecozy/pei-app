@@ -1,14 +1,16 @@
-import { T } from "../../constants/tokens";
+import { useT } from "../../context/ThemeContext";
 import { THEMES } from "../../hooks/useTheme";
 import { useBreakpoint } from "../../hooks/useBreakpoint";
 
 export default function SettingsPage({ themeId, setTheme }) {
+  const T = useT();
   const bp = useBreakpoint();
 
   return (
     <div style={{ paddingBottom:"4rem" }}>
       <style>{`@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}`}</style>
 
+      {/* Header */}
       <div style={{ padding:"3rem 0 2rem", borderBottom:`1px solid ${T.border}`, marginBottom:"2rem" }}>
         <div style={{ display:"flex", alignItems:"center", gap:"0.5rem",
           fontFamily:"DM Mono", fontSize:"0.52rem", letterSpacing:"0.18em",
@@ -27,6 +29,7 @@ export default function SettingsPage({ themeId, setTheme }) {
         </p>
       </div>
 
+      {/* Theme grid */}
       <div style={{ animation:"fadeUp 0.35s both" }}>
         <div style={{ fontFamily:"DM Mono", fontSize:"0.5rem", letterSpacing:"0.14em",
           textTransform:"uppercase", color:T.muted, marginBottom:"1rem" }}>
@@ -46,9 +49,12 @@ export default function SettingsPage({ themeId, setTheme }) {
                 onMouseEnter={e=>{ if(!isActive) e.currentTarget.style.background=T.surface2; }}
                 onMouseLeave={e=>{ if(!isActive) e.currentTarget.style.background=T.surface; }}>
 
+                {/* Active top border */}
                 <div style={{ position:"absolute", top:0, left:0, right:0, height:2,
-                  background: isActive ? T.amber : "transparent", transition:"background 0.2s" }} />
+                  background: isActive ? T.amber : "transparent",
+                  transition:"background 0.2s" }} />
 
+                {/* Color preview swatches */}
                 <div style={{ display:"flex", gap:4, marginBottom:"0.85rem" }}>
                   {theme.preview.map((color, i) => (
                     <div key={i} style={{ width: i===0?28:i===1?20:12,
@@ -57,13 +63,18 @@ export default function SettingsPage({ themeId, setTheme }) {
                   ))}
                 </div>
 
+                {/* Selection dot */}
                 <div style={{ display:"flex", alignItems:"center",
                   gap:"0.5rem", marginBottom:"0.4rem" }}>
                   <div style={{ width:14, height:14, borderRadius:"50%", flexShrink:0,
                     border:`2px solid ${isActive ? T.amber : T.border}`,
-                    background: isActive ? T.amber : "none", transition:"all 0.2s",
-                    display:"flex", alignItems:"center", justifyContent:"center" }}>
-                    {isActive && <div style={{ width:5, height:5, borderRadius:"50%", background:"#000" }} />}
+                    background: isActive ? T.amber : "none",
+                    transition:"all 0.2s", display:"flex",
+                    alignItems:"center", justifyContent:"center" }}>
+                    {isActive && (
+                      <div style={{ width:5, height:5,
+                        borderRadius:"50%", background:"#000" }} />
+                    )}
                   </div>
                   <span style={{ fontFamily:"DM Mono", fontSize:"0.58rem",
                     letterSpacing:"0.06em", textTransform:"uppercase",
@@ -82,11 +93,13 @@ export default function SettingsPage({ themeId, setTheme }) {
         </div>
       </div>
 
+      {/* Preview note */}
       <div style={{ marginTop:"1.5rem", padding:"0.75rem 1rem",
         border:`1px solid ${T.border}`, fontFamily:"DM Mono",
-        fontSize:"0.54rem", color:T.muted, lineHeight:1.7 }}>
+        fontSize:"0.54rem", color:T.muted, lineHeight:1.7,
+        animation:"fadeUp 0.4s 0.1s both" }}>
         <span style={{ color:T.teal }}>Live preview:</span>{" "}
-        Changes apply instantly. Your preference is saved locally on this device.
+        Changes apply instantly across all pages. Your preference is saved locally on this device.
       </div>
     </div>
   );
