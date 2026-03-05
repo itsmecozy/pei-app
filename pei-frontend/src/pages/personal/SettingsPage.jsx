@@ -214,6 +214,12 @@ export default function SettingsPage({ themeId, setTheme }) {
   const bp = useBreakpoint();
 
   const { permission: notifPermission, enable: enableNotif, disable: disableNotif, updateTimes: updateNotifTimes } = useNotifications();
+
+  const sendTestNotification = async () => {
+    if (!('serviceWorker' in navigator)) return;
+    const reg = await navigator.serviceWorker.ready;
+    reg.active?.postMessage({ type: 'TEST_NOTIFICATION' });
+  };
   const [notifEnabled, setNotifEnabled] = useState(() => {
     try { return localStorage.getItem("pei_notif_enabled") === "true"; } catch { return false; }
   });
@@ -477,11 +483,23 @@ export default function SettingsPage({ themeId, setTheme }) {
               </div>
 
               {/* iOS notice */}
-              <div style={{ padding:"0.65rem 1.25rem", fontFamily:"DM Mono",
-                fontSize:"0.48rem", color:T.muted, lineHeight:1.6 }}>
-                <span style={{ color:T.rose }}>iOS note:</span>{" "}
-                Push notifications are limited on iPhone Safari. Use Chrome on Android or desktop for best results.
-                {saved && <span style={{ color:T.teal, marginLeft:"0.5rem" }}>✓ Saved</span>}
+              <div style={{ padding:"0.65rem 1.25rem", borderTop:`1px solid ${T.border}`,
+                display:"flex", alignItems:"center", justifyContent:"space-between",
+                flexWrap:"wrap", gap:"0.5rem" }}>
+                <div style={{ fontFamily:"DM Mono", fontSize:"0.48rem", color:T.muted, lineHeight:1.6 }}>
+                  <span style={{ color:T.rose }}>iOS note:</span>{" "}
+                  Limited on iPhone Safari. Add to home screen or use Chrome on Android for best results.
+                  {saved && <span style={{ color:T.teal, marginLeft:"0.5rem" }}>✓ Saved</span>}
+                </div>
+                <button onClick={sendTestNotification}
+                  style={{ background:"none", border:`1px solid ${T.border}`,
+                    color:T.muted, padding:"0.25rem 0.65rem", fontFamily:"DM Mono",
+                    fontSize:"0.48rem", letterSpacing:"0.06em", textTransform:"uppercase",
+                    cursor:"pointer", whiteSpace:"nowrap", transition:"all 0.2s" }}
+                  onMouseEnter={e=>{ e.currentTarget.style.color=T.teal; e.currentTarget.style.borderColor=T.teal; }}
+                  onMouseLeave={e=>{ e.currentTarget.style.color=T.muted; e.currentTarget.style.borderColor=T.border; }}>
+                  Test notify
+                </button>
               </div>
             </>
           )}
