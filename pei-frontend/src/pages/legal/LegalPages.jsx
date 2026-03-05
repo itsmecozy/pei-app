@@ -1,8 +1,9 @@
-import { T } from "../../constants/tokens";
+import { useT } from "../../context/ThemeContext";
 import { useBreakpoint } from "../../hooks/useBreakpoint";
 import { PageHeader } from "../../components/shared/ui/index";
 
 function DocPage({ label, title, subtitle, sections }) {
+  const T = useT();
   const bp = useBreakpoint();
   return (
     <div>
@@ -23,6 +24,7 @@ function DocPage({ label, title, subtitle, sections }) {
 }
 
 export function PrivacyPolicyPage() {
+  const T = useT();
   return <DocPage
     label="Legal" title="Privacy Policy"
     subtitle="Last updated March 2026. This policy covers data collected through anonymous submissions on pei.ph."
@@ -38,6 +40,7 @@ export function PrivacyPolicyPage() {
 }
 
 export function AnonymityFrameworkPage() {
+  const T = useT();
   const bp = useBreakpoint();
   const layers = [
     { num:"01", title:"No Persistent IP Storage",     body:"Your IP address is used only for rate-limiting at the edge. It is never written to the database.",                                                           color:T.teal    },
@@ -85,6 +88,7 @@ export function AnonymityFrameworkPage() {
 }
 
 export function DataMethodologyPage() {
+  const T = useT();
   return <DocPage
     label="Legal" title="Data Methodology"
     subtitle="How emotional signals are collected, weighted, and aggregated into the national index."
@@ -99,6 +103,7 @@ export function DataMethodologyPage() {
 }
 
 export function ResearchAccessPage() {
+  const T = useT();
   return <DocPage
     label="Legal" title="Research Access"
     subtitle="Guidelines for academic and institutional access to PEI aggregated datasets."
@@ -112,6 +117,7 @@ export function ResearchAccessPage() {
 }
 
 export function ContactPage() {
+  const T = useT();
   const bp = useBreakpoint();
   return <DocPage
     label="Contact" title="Get in Touch"
