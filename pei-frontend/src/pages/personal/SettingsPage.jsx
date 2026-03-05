@@ -14,6 +14,9 @@ function TimePicker({ value, onChange, onClose }) {
   const [hour,   setHour]   = useState(h % 12 || 12);
   const [minute, setMinute] = useState(m);
   const [period, setPeriod] = useState(h >= 12 ? "PM" : "AM");
+  const [mode,   setMode]   = useState("scroll"); // "scroll" | "manual"
+  const [manH,   setManH]   = useState(String(h % 12 || 12));
+  const [manM,   setManM]   = useState(String(m).padStart(2,"0"));
   const ref = useRef(null);
 
   useEffect(() => {
@@ -23,8 +26,16 @@ function TimePicker({ value, onChange, onClose }) {
   }, []);
 
   const confirm = () => {
-    let h24 = period === "PM" ? (hour === 12 ? 12 : hour + 12) : (hour === 12 ? 0 : hour);
-    onChange(`${String(h24).padStart(2,"0")}:${String(minute).padStart(2,"0")}`);
+    let finalH, finalM;
+    if (mode === "manual") {
+      finalH = Math.min(12, Math.max(1, parseInt(manH) || 12));
+      finalM = Math.min(59, Math.max(0,  parseInt(manM) || 0));
+    } else {
+      finalH = hour;
+      finalM = minute;
+    }
+    const h24 = period === "PM" ? (finalH === 12 ? 12 : finalH + 12) : (finalH === 12 ? 0 : finalH);
+    onChange(`${String(h24).padStart(2,"0")}:${String(finalM).padStart(2,"0")}`);
     onClose();
   };
 
@@ -39,7 +50,7 @@ function TimePicker({ value, onChange, onClose }) {
   );
 
   const ScrollCol = ({items, selected, onSelect, format}) => (
-    <div style={{ display:"flex", flexDirection:"column", gap:2, maxHeight:180,
+    <div style={{ display:"flex", flexDirection:"column", gap:2, maxHeight:160,
       overflowY:"auto", scrollbarWidth:"none" }}>
       {items.map(v => {
         const isSel = v === selected;
@@ -63,36 +74,109 @@ function TimePicker({ value, onChange, onClose }) {
   return (
     <div ref={ref} style={{ position:"absolute", zIndex:100, top:"calc(100% + 6px)", left:0,
       background:T.surface, border:`1px solid ${T.border}`,
-      boxShadow:"0 8px 32px rgba(0,0,0,0.3)", width:240,
+      boxShadow:"0 8px 32px rgba(0,0,0,0.3)", width:260,
       animation:"dropIn 0.18s ease" }}>
       <div style={{ height:2, background:`linear-gradient(to right, ${T.amber}, ${T.teal})` }} />
+
+      {/* Mode tabs */}
+      <div style={{ display:"flex", borderBottom:`1px solid ${T.border}` }}>
+        {["scroll","manual"].map(m => (
+          <button key={m} onClick={() => setMode(m)}
+            style={{ flex:1, padding:"0.45rem", background: mode===m ? `${T.amber}12` : "none",
+              border:"none", borderBottom:`2px solid ${mode===m ? T.amber : "transparent"}`,
+              color: mode===m ? T.amber : T.muted, fontFamily:"DM Mono",
+              fontSize:"0.48rem", letterSpacing:"0.1em", textTransform:"uppercase",
+              cursor:"pointer", transition:"all 0.15s" }}>
+            {m === "scroll" ? "Scroll" : "Custom"}
+          </button>
+        ))}
+      </div>
+
       <div style={{ padding:"0.75rem" }}>
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 80px", gap:"0.5rem" }}>
-          <div>
-            <ColLabel label="Hour" />
-            <ScrollCol items={hours} selected={hour} onSelect={setHour} />
+        {mode === "scroll" ? (
+          /* Scroll mode */
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 72px", gap:"0.5rem" }}>
+            <div>
+              <ColLabel label="Hour" />
+              <ScrollCol items={hours} selected={hour} onSelect={setHour} />
+            </div>
+            <div>
+              <ColLabel label="Min" />
+              <ScrollCol items={minutes} selected={minute} onSelect={setMinute}
+                format={v => String(v).padStart(2,"0")} />
+            </div>
+            <div>
+              <ColLabel label="AM/PM" />
+              {["AM","PM"].map(p => (
+                <div key={p} onClick={() => setPeriod(p)}
+                  style={{ padding:"0.4rem", cursor:"pointer", textAlign:"center",
+                    fontFamily:"DM Mono", fontSize:"0.62rem", marginBottom:3,
+                    background: period===p ? T.amber : "none",
+                    color: period===p ? "#000" : T.muted,
+                    transition:"all 0.15s", borderRadius:2 }}
+                  onMouseEnter={e=>{ if(period!==p) e.currentTarget.style.background=T.surface2; }}
+                  onMouseLeave={e=>{ if(period!==p) e.currentTarget.style.background="none"; }}>
+                  {p}
+                </div>
+              ))}
+            </div>
           </div>
+        ) : (
+          /* Manual input mode */
           <div>
-            <ColLabel label="Min" />
-            <ScrollCol items={minutes} selected={minute} onSelect={setMinute}
-              format={v => String(v).padStart(2,"0")} />
-          </div>
-          <div>
-            <ColLabel label="AM/PM" />
-            {["AM","PM"].map(p => (
-              <div key={p} onClick={() => setPeriod(p)}
-                style={{ padding:"0.35rem 0.4rem", cursor:"pointer", textAlign:"center",
-                  fontFamily:"DM Mono", fontSize:"0.62rem", marginBottom:2,
-                  background: period===p ? T.amber : "none",
-                  color: period===p ? "#000" : T.muted,
-                  transition:"all 0.15s", borderRadius:2 }}
-                onMouseEnter={e=>{ if(period!==p) e.currentTarget.style.background=T.surface2; }}
-                onMouseLeave={e=>{ if(period!==p) e.currentTarget.style.background="none"; }}>
-                {p}
+            <div style={{ display:"flex", alignItems:"center", gap:"0.5rem",
+              justifyContent:"center", marginBottom:"0.75rem" }}>
+              {/* Hour input */}
+              <input
+                type="number" min="1" max="12"
+                value={manH}
+                onChange={e => setManH(e.target.value)}
+                onBlur={e => {
+                  const v = Math.min(12, Math.max(1, parseInt(e.target.value)||12));
+                  setManH(String(v));
+                }}
+                style={{ width:52, padding:"0.5rem", textAlign:"center",
+                  background:T.surface2, border:`1px solid ${T.border}`,
+                  color:T.text, fontFamily:"'Playfair Display',serif",
+                  fontSize:"1.4rem", fontWeight:700, outline:"none" }}
+              />
+              <span style={{ fontFamily:"DM Mono", fontSize:"1.2rem", color:T.muted }}>:</span>
+              {/* Minute input */}
+              <input
+                type="number" min="0" max="59"
+                value={manM}
+                onChange={e => setManM(e.target.value)}
+                onBlur={e => {
+                  const v = Math.min(59, Math.max(0, parseInt(e.target.value)||0));
+                  setManM(String(v).padStart(2,"0"));
+                }}
+                style={{ width:52, padding:"0.5rem", textAlign:"center",
+                  background:T.surface2, border:`1px solid ${T.border}`,
+                  color:T.text, fontFamily:"'Playfair Display',serif",
+                  fontSize:"1.4rem", fontWeight:700, outline:"none" }}
+              />
+              {/* AM/PM */}
+              <div style={{ display:"flex", flexDirection:"column", gap:3 }}>
+                {["AM","PM"].map(p => (
+                  <div key={p} onClick={() => setPeriod(p)}
+                    style={{ padding:"0.3rem 0.45rem", cursor:"pointer", textAlign:"center",
+                      fontFamily:"DM Mono", fontSize:"0.56rem",
+                      background: period===p ? T.amber : T.surface2,
+                      border:`1px solid ${period===p ? T.amber : T.border}`,
+                      color: period===p ? "#000" : T.muted,
+                      transition:"all 0.15s" }}>
+                    {p}
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
+            <div style={{ fontFamily:"DM Mono", fontSize:"0.48rem",
+              color:T.muted, textAlign:"center", marginBottom:"0.3rem" }}>
+              Type any hour (1–12) and minute (0–59)
+            </div>
           </div>
-        </div>
+        )}
+
         <button onClick={confirm}
           style={{ width:"100%", marginTop:"0.6rem", background:T.amber, color:"#000",
             border:"none", padding:"0.45rem", fontFamily:"DM Mono", fontSize:"0.54rem",
