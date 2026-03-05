@@ -2,8 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { useT } from "../../context/ThemeContext";
 import { THEMES } from "../../hooks/useTheme";
 import { useBreakpoint } from "../../hooks/useBreakpoint";
+import { useNotifications } from "../../hooks/useNotifications";
 
-const NOTIF_KEY       = "pei_notif_enabled";
 const NOTIF_TIMES_KEY = "pei_notif_times";
 const DEFAULT_TIMES   = ["20:00"];
 
@@ -197,36 +197,6 @@ function formatTime(t) {
   return `${h12}:${String(m).padStart(2,"0")} ${p}`;
 }
 
-// ── Notification scheduler ────────────────────────────────────────────────────
-function scheduleAllNotifications(enabled, times) {
-  // Clear existing
-  const ids = JSON.parse(localStorage.getItem("pei_notif_ids") || "[]");
-  ids.forEach(id => clearTimeout(id));
-  localStorage.setItem("pei_notif_ids", "[]");
-  if (!enabled || !times.length) return;
-
-  const newIds = times.map(time => {
-    const [h, m]  = time.split(":").map(Number);
-    const now     = new Date();
-    const target  = new Date();
-    target.setHours(h, m, 0, 0);
-    if (target <= now) target.setDate(target.getDate() + 1);
-    const msUntil = target.getTime() - now.getTime();
-
-    return setTimeout(() => {
-      if (Notification.permission === "granted") {
-        new Notification("PEI — How are you feeling?", {
-          body: "Take a moment to log your emotion for today.",
-          icon: "/favicon.ico",
-        });
-      }
-      scheduleAllNotifications(true, times);
-    }, msUntil);
-  });
-
-  localStorage.setItem("pei_notif_ids", JSON.stringify(newIds));
-}
-
 // ── Section header ────────────────────────────────────────────────────────────
 function SectionHeader({ label }) {
   const T = useT();
@@ -243,51 +213,45 @@ export default function SettingsPage({ themeId, setTheme }) {
   const T  = useT();
   const bp = useBreakpoint();
 
+  const { permission: notifPermission, enable: enableNotif, disable: disableNotif, updateTimes: updateNotifTimes } = useNotifications();
   const [notifEnabled, setNotifEnabled] = useState(() => {
-    try { return localStorage.getItem(NOTIF_KEY) === "true"; } catch { return false; }
+    try { return localStorage.getItem("pei_notif_enabled") === "true"; } catch { return false; }
   });
   const [times, setTimes] = useState(() => {
     try { return JSON.parse(localStorage.getItem(NOTIF_TIMES_KEY) || "null") || DEFAULT_TIMES; }
     catch { return DEFAULT_TIMES; }
   });
-  const [notifPermission, setNotifPermission] = useState(
-    typeof Notification !== "undefined" ? Notification.permission : "unsupported"
-  );
-  const [pickerIndex, setPickerIndex] = useState(null); // which time slot is open
+  const [pickerIndex, setPickerIndex] = useState(null);
   const [saved, setSaved]             = useState(false);
-
-  useEffect(() => {
-    try { localStorage.setItem(NOTIF_KEY,       String(notifEnabled)); } catch {}
-    try { localStorage.setItem(NOTIF_TIMES_KEY, JSON.stringify(times)); } catch {}
-    scheduleAllNotifications(notifEnabled, times);
-  }, [notifEnabled, times]);
 
   const handleToggle = async () => {
     if (!notifEnabled) {
-      if (notifPermission === "default") {
-        const result = await Notification.requestPermission();
-        setNotifPermission(result);
-        if (result !== "granted") return;
-      }
-      if (notifPermission === "denied") return;
-      setNotifEnabled(true);
+      const ok = await enableNotif(times);
+      if (ok) setNotifEnabled(true);
     } else {
+      await disableNotif();
       setNotifEnabled(false);
     }
   };
 
   const addTime = () => {
     if (times.length >= 4) return;
-    setTimes(prev => [...prev, "08:00"]);
+    const next = [...times, "08:00"];
+    setTimes(next);
+    updateNotifTimes(next);
   };
 
   const removeTime = (i) => {
     if (times.length <= 1) return;
-    setTimes(prev => prev.filter((_,idx) => idx !== i));
+    const next = times.filter((_,idx) => idx !== i);
+    setTimes(next);
+    updateNotifTimes(next);
   };
 
   const updateTime = (i, val) => {
-    setTimes(prev => prev.map((t,idx) => idx===i ? val : t));
+    const next = times.map((t,idx) => idx===i ? val : t);
+    setTimes(next);
+    updateNotifTimes(next);
     setSaved(true);
     setTimeout(() => setSaved(false), 1800);
   };
@@ -429,7 +393,7 @@ export default function SettingsPage({ themeId, setTheme }) {
                   {INTERVALS.map(preset => {
                     const isActive = JSON.stringify(preset.times) === JSON.stringify(times);
                     return (
-                      <button key={preset.label} onClick={() => setTimes(preset.times)}
+                      <button key={preset.label} onClick={() => { setTimes(preset.times); updateNotifTimes(preset.times); }}
                         style={{ background: isActive ? T.amber : "none",
                           border:`1px solid ${isActive ? T.amber : T.border}`,
                           color: isActive ? "#000" : T.muted,
