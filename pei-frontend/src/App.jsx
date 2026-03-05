@@ -77,7 +77,7 @@ export default function App() {
       ? <>
           <div style={{ filter:isExpired?"blur(4px) brightness(0.4)":"none",
             pointerEvents:isExpired?"none":"auto", transition:"filter 0.3s" }}>
-            <PersonalDashboard user={user} profile={profile} navigate={handleNavigate} />
+            <PersonalDashboard key={user.id} user={user} profile={profile} navigate={handleNavigate} />
           </div>
           {isExpired && <PricingOverlay plan={profile?.plan||"trial"} navigate={handleNavigate} />}
         </>
