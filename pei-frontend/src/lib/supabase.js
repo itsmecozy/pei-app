@@ -206,3 +206,55 @@ export async function getPersonalStats(user_id) {
     count: submissions.length,
   }
 }
+
+// ── Streak tracking ────────────────────────────────────────────────────────────
+export async function updateStreak(userId) {
+  // Get all submission dates for this user
+  const { data, error } = await supabase
+    .from('personal_submissions')
+    .select('created_at')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+
+  if (error || !data?.length) return
+
+  // Get unique dates
+  const dates = [...new Set(
+    data.map(s => new Date(s.created_at).toISOString().slice(0, 10))
+  )].sort().reverse()
+
+  // Calculate current streak
+  let streak = 0
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  let check = new Date(today)
+
+  for (const d of dates) {
+    const checkStr = check.toISOString().slice(0, 10)
+    if (d === checkStr) {
+      streak++
+      check.setDate(check.getDate() - 1)
+    } else if (d < checkStr) {
+      break
+    }
+  }
+
+  // Get current profile to compare longest streak
+  const { data: profile } = await supabase
+    .from('user_profiles')
+    .select('longest_streak')
+    .eq('id', userId)
+    .single()
+
+  const longest = Math.max(streak, profile?.longest_streak || 0)
+  const today_str = new Date().toISOString().slice(0, 10)
+
+  await supabase
+    .from('user_profiles')
+    .update({
+      current_streak: streak,
+      longest_streak: longest,
+      last_submission_date: today_str,
+    })
+    .eq('id', userId)
+}
