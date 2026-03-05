@@ -6,6 +6,13 @@ import { useBreakpoint } from "../../hooks/useBreakpoint";
 import { Skeleton, EmptyState } from "../../components/shared/ui/index";
 
 // ── Animated bar ──────────────────────────────────────────────────────────────
+function formatDateTime(dateStr) {
+  const d = new Date(dateStr);
+  const date = d.toLocaleDateString("en-PH", { month:"short", day:"numeric", year:"numeric" });
+  const time = d.toLocaleTimeString("en-PH", { hour:"numeric", minute:"2-digit", hour12:true });
+  return { date, time, full: `${date} · ${time}` };
+}
+
 function AnimatedBar({ pct, hex, delay = 0 }) {
   const T = useT();
   const [w, setW] = useState(0);
@@ -582,10 +589,11 @@ export default function PersonalDashboard({ user, profile, navigate }) {
                     <div key={i} style={{ display:"flex", alignItems:"center",
                       gap:"0.75rem", padding:"0.5rem 0",
                       borderBottom: i<5 ? `1px solid ${T.border}` : "none" }}>
-                      <span style={{ fontFamily:"DM Mono", fontSize:"0.48rem",
-                        color:T.muted, minWidth:44 }}>
-                        {new Date(s.created_at).toLocaleDateString("en-PH", { month:"short", day:"numeric" })}
-                      </span>
+                      <div style={{ fontFamily:"DM Mono", fontSize:"0.44rem",
+                        color:T.muted, minWidth:52, lineHeight:1.5 }}>
+                        <div>{formatDateTime(s.created_at).date}</div>
+                        <div style={{ opacity:0.6 }}>{formatDateTime(s.created_at).time}</div>
+                      </div>
                       <span style={{ background:`${em?.hex}15`, border:`1px solid ${em?.hex}25`,
                         padding:"0.15rem 0.45rem", fontFamily:"DM Mono", fontSize:"0.48rem",
                         color:em?.hex, textTransform:"capitalize", whiteSpace:"nowrap" }}>
@@ -654,12 +662,14 @@ export default function PersonalDashboard({ user, profile, navigate }) {
                     style={{ padding:"0.85rem 1.25rem",
                       borderBottom: i<submissions.length-1 ? `1px solid ${T.border}` : "none",
                       display:"grid",
-                      gridTemplateColumns: bp==="mobile" ? "50px 1fr auto" : "58px 155px 95px 1fr auto",
+                      gridTemplateColumns: bp==="mobile" ? "60px 1fr auto" : "72px 155px 95px 1fr auto",
                       alignItems:"center", gap:"0.75rem", transition:"background 0.2s" }}
                     onMouseEnter={e=>e.currentTarget.style.background=T.surface2}
                     onMouseLeave={e=>e.currentTarget.style.background="none"}>
-                    <div style={{ fontFamily:"DM Mono", fontSize:"0.5rem", color:T.muted }}>
-                      {new Date(s.created_at).toLocaleDateString("en-PH", { month:"short", day:"numeric" })}
+                    <div style={{ fontFamily:"DM Mono", fontSize:"0.44rem",
+                      color:T.muted, lineHeight:1.5 }}>
+                      <div>{formatDateTime(s.created_at).date}</div>
+                      <div style={{ opacity:0.6 }}>{formatDateTime(s.created_at).time}</div>
                     </div>
                     <div style={{ background:`${em?.hex}15`, border:`1px solid ${em?.hex}30`,
                       padding:"0.18rem 0.5rem", fontFamily:"DM Mono", fontSize:"0.5rem",
