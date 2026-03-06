@@ -10,7 +10,7 @@ const DESPAIR_LEANING = ["grief", "anger", "anxiety", "regret", "longing"];
 // "calm" is neutral — excluded from HDR numerator and denominator
 
 const PERIODS: Record<string, number | null> = { "7d": 7, "30d": 30, "90d": 90, "all": null };
-const THRESHOLD = 50; // min submissions for LGU to appear on map
+const THRESHOLD = 10; // lowered for dev/testing (change back to 50 for production) // min submissions for LGU to appear on map
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
