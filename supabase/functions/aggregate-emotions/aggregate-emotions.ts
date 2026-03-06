@@ -9,7 +9,7 @@ const HOPE_LEANING    = ["hope", "relief", "determination"];
 const DESPAIR_LEANING = ["grief", "anger", "anxiety", "regret", "longing"];
 // "calm" is neutral — excluded from HDR numerator and denominator
 
-const PERIODS: Record<string, number> = { "7d": 7, "30d": 30, "90d": 90 };
+const PERIODS: Record<string, number | null> = { "7d": 7, "30d": 30, "90d": 90, "all": null };
 const THRESHOLD = 50; // min submissions for LGU to appear on map
 
 const corsHeaders = {
@@ -78,13 +78,14 @@ Deno.serve(async (req: Request) => {
 
   try {
     for (const [period, days] of Object.entries(PERIODS)) {
-      const since = new Date(now.getTime() - days * 24 * 60 * 60 * 1000).toISOString();
+      const since = days ? new Date(now.getTime() - days * 24 * 60 * 60 * 1000).toISOString() : null;
 
       // ── 1. Fetch all submissions in window ──────────────────────────────
-      const { data: subs, error: subsErr } = await admin
+      let subsQuery = admin
         .from("submissions")
-        .select("lgu_id, emotion, intensity")
-        .gte("submitted_at", since);
+        .select("lgu_id, emotion, intensity");
+      if (since) subsQuery = subsQuery.gte("submitted_at", since);
+      const { data: subs, error: subsErr } = await subsQuery;
 
       if (subsErr) throw new Error(`submissions fetch: ${subsErr.message}`);
       if (!subs?.length) { results[period] = { lgu: 0, province: 0, national: false }; continue; }
@@ -219,8 +220,8 @@ Deno.serve(async (req: Request) => {
         .from("national_aggregations")
         .upsert({
           period,
-          week_number:      weekNumber,
-          year:             now.getUTCFullYear(),
+          week_number:      days ? weekNumber : 0,
+          year:             days ? now.getUTCFullYear() : 0,
           computed_at:      now.toISOString(),
           submission_count: subs.length,
           active_lgus:      Object.keys(byLgu).length,
