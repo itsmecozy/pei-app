@@ -8,6 +8,12 @@ export const EMOTIONS = [
   { name:"Relief",        key:"relief",        hex:"#10b981", icon:"Sun"         },
   { name:"Determination", key:"determination", hex:"#3b82f6", icon:"Zap"         },
   { name:"Regret",        key:"regret",        hex:"#ec4899", icon:"Leaf"        },
+  { name:"Calm",          key:"calm",          hex:"#8899AA", icon:"Waves"       },
 ];
+
+// HDR categories
+export const HOPE_LEANING    = ["hope", "relief", "determination"];
+export const NEUTRAL         = ["calm"];
+export const DESPAIR_LEANING = ["grief", "anger", "anxiety", "regret", "longing"];
 
 export const EMOTION_MAP = Object.fromEntries(EMOTIONS.map(e => [e.key, e]));
