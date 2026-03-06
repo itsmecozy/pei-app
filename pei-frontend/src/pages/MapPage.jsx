@@ -111,13 +111,13 @@ export default function MapPage({ openModal }) {
 
       <div style={{ padding:bp==="mobile"?"0 1.25rem 1rem":"0 0 1rem",
         display:"flex", alignItems:"center", gap:"0.5rem", flexWrap:"wrap" }}>
-        {["7d","30d","90d"].map(t => (
+        {["7d","30d","90d","all"].map(t => (
           <button key={t} onClick={() => setPeriod(t)}
             style={{ padding:"0.28rem 0.65rem", fontFamily:"DM Mono", fontSize:"0.56rem",
               letterSpacing:"0.06em", border:`1px solid ${period===t?T.amber:T.border}`,
               background:period===t?`${T.amber}15`:"none",
               color:period===t?T.amber:T.muted, cursor:"pointer", transition:"all 0.2s" }}>
-            {t.toUpperCase()}
+            {t === 'all' ? 'ALL TIME' : t.toUpperCase()}
           </button>
         ))}
         {lgus.length > 0 && bp !== "desktop" && lgus.map(a => {

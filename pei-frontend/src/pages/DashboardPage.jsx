@@ -35,13 +35,13 @@ export default function DashboardPage({ navigate }) {
       </div>
 
       <div style={{ padding:bp==="mobile"?"0 1.25rem 1.25rem":"0 0 1.25rem", display:"flex", gap:"0.25rem" }}>
-        {["7d","30d","90d"].map(t => (
+        {["7d","30d","90d","all"].map(t => (
           <button key={t} onClick={() => setPeriod(t)}
             style={{ padding:"0.28rem 0.65rem", fontFamily:"DM Mono", fontSize:"0.56rem",
               letterSpacing:"0.06em", border:`1px solid ${period===t?T.amber:T.border}`,
               background:period===t?`${T.amber}15`:"none",
               color:period===t?T.amber:T.muted, cursor:"pointer", transition:"all 0.2s" }}>
-            {t.toUpperCase()}
+            {t === 'all' ? 'ALL TIME' : t.toUpperCase()}
           </button>
         ))}
       </div>
