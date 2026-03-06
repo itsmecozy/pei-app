@@ -1,15 +1,16 @@
 // PEI SUBMIT EMOTION - no rate limiting (test mode)
+
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const VALID_EMOTIONS = [
   "longing", "hope", "anger", "anxiety",
-  "grief", "relief", "determination", "regret"
+  "grief", "relief", "determination", "regret", "calm"
 ];
 
 const LIMITS = { anonymous: 1, trial: 2, paid: 3 };
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin":  "*",
+  "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-user-token",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
@@ -47,6 +48,7 @@ Deno.serve(async (req: Request) => {
       return new Response(JSON.stringify({ error: "Invalid input" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
+
     if (!intensity || intensity < 1 || intensity > 5) {
       return new Response(JSON.stringify({ error: "Intensity must be 1-5" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -68,19 +70,19 @@ Deno.serve(async (req: Request) => {
         if (!error && user) {
           userId = user.id;
           const { data: prof } = await admin
-            .from("user_profiles").select("plan").eq("id", user.id).single();
-          const plan = prof?.plan || "trial";
-          userTier = (plan === "seasonal" || plan === "lifetime") ? "paid" : "trial";
+            .from("user_profiles").select("plan_activated_at").eq("id", user.id).single();
+          userTier = prof?.plan_activated_at ? "paid" : "trial";
         }
       } catch { /* treat as anonymous */ }
     }
 
     const maxAllowed = LIMITS[userTier];
-    const salt       = getDailySalt();
-    const today      = new Date().toISOString().split("T")[0];
-    const ip         = req.headers.get("x-forwarded-for")?.split(",")[0].trim() || "unknown";
-    const ua         = req.headers.get("user-agent") || "unknown";
-    const rateKey    = userId
+    const salt = getDailySalt();
+    const today = new Date().toISOString().split("T")[0];
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() || "unknown";
+    const ua = req.headers.get("user-agent") || "unknown";
+
+    const rateKey = userId
       ? await hashWithSalt(userId, salt)
       : await hashWithSalt(await hashWithSalt(ip, salt) + await hashWithSalt(ua, salt), salt);
 
@@ -121,10 +123,10 @@ Deno.serve(async (req: Request) => {
     const now = new Date();
     const { error: insertErr } = await admin.from("submissions").insert({
       lgu_id,
-      emotion:     emotion.toLowerCase(),
+      emotion: emotion.toLowerCase(),
       intensity,
       week_number: getWeekNumber(now),
-      year:        now.getUTCFullYear(),
+      year: now.getUTCFullYear(),
       text_signal: null,
     });
 
@@ -145,9 +147,9 @@ Deno.serve(async (req: Request) => {
 
     return new Response(
       JSON.stringify({
-        acknowledged:          true,
-        lgu:                   lguData.name,
-        tier:                  userTier,
+        acknowledged: true,
+        lgu: lguData.name,
+        tier: userTier,
         submissions_remaining: maxAllowed - (currentCount + 1),
       }),
       { status: 201, headers: { ...corsHeaders, "Content-Type": "application/json" } }
