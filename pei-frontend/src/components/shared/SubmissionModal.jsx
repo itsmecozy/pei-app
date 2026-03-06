@@ -18,11 +18,13 @@ export default function SubmissionModal({ open, onClose, onSuccess, homeLguId, h
   const [submitting, setSubmitting]   = useState(false);
   const [done, setDone]               = useState(false);
   const [error, setError]             = useState(null);
+  const [showLocationPopup, setShowLocationPopup] = useState(false);
   const bp = useBreakpoint();
 
   const reset = () => {
     setStep(1); setQuery(""); setLguResults([]); setSelectedLgu(null);
     setEmotion(null); setIntensity(3); setText(""); setDone(false); setError(null);
+    setShowLocationPopup(false);
   };
   const handleClose = () => { onClose(); setTimeout(reset, 400); };
 
@@ -152,19 +154,7 @@ export default function SubmissionModal({ open, onClose, onSuccess, homeLguId, h
                     </div>
                   )}
 
-                  {/* Location change warning */}
-                  {selectedLgu && homeLguId && selectedLgu.id !== homeLguId && (
-                    <div style={{ marginTop:"0.4rem", background:`${T.rose}08`,
-                      border:`1px solid ${T.rose}25`, padding:"0.6rem 0.7rem",
-                      fontFamily:"DM Mono", fontSize:"0.54rem", color:T.rose,
-                      display:"flex", alignItems:"flex-start", gap:"0.5rem", lineHeight:1.6 }}>
-                      <span style={{ flexShrink:0 }}>⚠</span>
-                      <span>
-                        You're submitting from <strong>{selectedLgu.name}</strong> — your home area is <strong>{homeLguName || "elsewhere"}</strong>. 
-                        That's fine — your submission stays anonymous either way.
-                      </span>
-                    </div>
-                  )}
+
 
                   <div style={{ marginTop:"0.75rem", background:`${T.teal}08`,
                     border:`1px solid ${T.teal}15`, padding:"0.6rem 0.7rem",
@@ -292,6 +282,10 @@ export default function SubmissionModal({ open, onClose, onSuccess, homeLguId, h
                 onClick={() => {
                   if (step === 1 && !selectedLgu) return;
                   if (step === 2 && !emotion) return;
+                  if (step === 1 && homeLguId && selectedLgu?.id !== homeLguId) {
+                    setShowLocationPopup(true);
+                    return;
+                  }
                   if (step < 3) setStep(s => s + 1);
                   else handleSubmit();
                 }}
@@ -309,6 +303,50 @@ export default function SubmissionModal({ open, onClose, onSuccess, homeLguId, h
           </div>
         )}
       </div>
+      {/* Location confirmation popup */}
+      {showLocationPopup && (
+        <div style={{ position:"fixed", inset:0, zIndex:400,
+          display:"flex", alignItems:"center", justifyContent:"center",
+          background:"rgba(0,0,0,0.6)", backdropFilter:"blur(6px)" }}>
+          <div style={{ background:T.surface, border:`1px solid ${T.border}`,
+            maxWidth:400, width:"90%", padding:"1.75rem",
+            animation:"modalIn 0.25s ease" }}>
+            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:"1.05rem",
+              fontWeight:700, marginBottom:"0.75rem" }}>
+              Confirm Location
+            </div>
+            <p style={{ fontFamily:"DM Mono", fontSize:"0.62rem", color:T.muted,
+              lineHeight:1.75, marginBottom:"1.25rem" }}>
+              You've selected{" "}
+              <span style={{ color:T.text, fontWeight:600 }}>{selectedLgu?.name}</span>
+              , but your home area is{" "}
+              <span style={{ color:T.text, fontWeight:600 }}>{homeLguName}</span>.
+              <br/><br/>
+              Your submission will count toward{" "}
+              <span style={{ color:T.amber }}>{selectedLgu?.name}'s</span> emotional index.
+            </p>
+            <div style={{ display:"flex", gap:"0.5rem", justifyContent:"flex-end" }}>
+              <button
+                onClick={() => setShowLocationPopup(false)}
+                style={{ background:"none", border:`1px solid ${T.border}`,
+                  color:T.muted, padding:"0.5rem 0.9rem", fontFamily:"DM Mono",
+                  fontSize:"0.58rem", letterSpacing:"0.08em", textTransform:"uppercase",
+                  cursor:"pointer" }}>
+                Change Location
+              </button>
+              <button
+                onClick={() => { setShowLocationPopup(false); setStep(2); }}
+                style={{ background:T.amber, color:"#000", border:"none",
+                  padding:"0.5rem 1rem", fontFamily:"DM Mono", fontSize:"0.58rem",
+                  fontWeight:500, letterSpacing:"0.08em", textTransform:"uppercase",
+                  cursor:"pointer" }}>
+                Continue Anyway
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`
         @keyframes modalIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
         @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
