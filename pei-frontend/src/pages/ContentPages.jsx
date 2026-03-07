@@ -14,14 +14,22 @@ export function TrendsPage() {
   const [lgus, setLgus]         = useState([]);
   const [selected, setSelected] = useState(null);
   const [loading, setLoading]   = useState(true);
+  const [period, setPeriod]     = useState("30d");
   const [ref, inView]           = useInView(0.05);
 
   useEffect(() => {
-    getLGUAggregations("7d")
-      .then(data => { setLgus(data); if (data.length > 0) setSelected(data[0]); })
+    setLoading(true);
+    getLGUAggregations(period)
+      .then(data => {
+        setLgus(data);
+        setSelected(prev => {
+          const match = prev && data.find(d => d.lgu_id === prev.lgu_id);
+          return match || (data.length > 0 ? data[0] : null);
+        });
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [period]);
 
   const dist        = selected?.emotion_dist || {};
   const distEntries = Object.entries(dist)
@@ -34,6 +42,19 @@ export function TrendsPage() {
         <PageHeader label="Emotional Velocity" title="How Fast Feelings Shift"
           live={lgus.length > 0}
           subtitle="Velocity tracks the rate of emotional change. A city moving from grief to hope in 7 days tells a different story than one taking 90." />
+      </div>
+
+      {/* Period selector */}
+      <div style={{ padding:bp==="mobile"?"0 1.25rem 1.25rem":"0 0 1.25rem", display:"flex", gap:"0.25rem" }}>
+        {["7d","30d","90d","all"].map(t => (
+          <button key={t} onClick={() => setPeriod(t)}
+            style={{ padding:"0.28rem 0.65rem", fontFamily:"DM Mono", fontSize:"0.56rem",
+              letterSpacing:"0.06em", border:`1px solid ${period===t?T.amber:T.border}`,
+              background:period===t?`${T.amber}15`:"none",
+              color:period===t?T.amber:T.muted, cursor:"pointer", transition:"all 0.2s" }}>
+            {t === "all" ? "ALL TIME" : t.toUpperCase()}
+          </button>
+        ))}
       </div>
 
       {loading ? (
@@ -101,11 +122,11 @@ export function TrendsPage() {
                   fill={Math.min((selected.hdr||0)/2*100,100)} />
                 <ScoreCard label="Velocity"
                   value={selected.velocity!==null?`${selected.velocity>0?"+":""}${selected.velocity}`:"—"}
-                  desc="7-day rate of change"
+                  desc={`${period === "all" ? "All time" : period} rate of change`}
                   color={selected.velocity>0?"#10b981":selected.velocity<0?T.rose:T.muted}
                   fill={Math.abs(selected.velocity||0)*300} />
                 <ScoreCard label="Submissions" value={selected.submission_count?.toLocaleString()}
-                  desc="7-day window" color={T.text} fill={40} />
+                  desc={`${period === "all" ? "All time" : period} window`} color={T.text} fill={40} />
               </div>
               <div style={{ padding:"1rem", border:`1px solid ${T.border}`, background:T.bg }}>
                 <div style={{ fontFamily:"DM Mono", fontSize:"0.52rem", letterSpacing:"0.12em",
