@@ -64,6 +64,22 @@ export async function getLGUAggregations(period = '7d') {
   return data || []
 }
 
+export async function getProvinceAggregations(period = 'all') {
+  const { data, error } = await supabase
+    .from('province_aggregations')
+    .select(`
+      *,
+      provinces (
+        id, name,
+        regions ( name )
+      )
+    `)
+    .eq('period', period)
+    .order('submission_count', { ascending: false })
+  if (error) return []
+  return data || []
+}
+
 export async function getLGUData(lgu_id, period = '7d') {
   const { data, error } = await supabase
     .from('lgu_aggregations')
