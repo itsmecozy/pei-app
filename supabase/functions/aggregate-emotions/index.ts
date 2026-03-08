@@ -1,328 +1,267 @@
-// ─── PEI AGGREGATION FUNCTION ────────────────────────────────────────────────
-// Computes ESI, HDR, Velocity for all LGUs from raw submissions
-// Called daily via Supabase cron or manually via HTTP
+// PEI AGGREGATE EMOTIONS — Fixed period logic
+// 
+// Period definitions (relative to PROJECT DEPLOYMENT DATE, not "now"):
+//   7d  = deployment_date → deployment_date + 7 days
+//   30d = deployment_date → deployment_date + 30 days
+//   90d = deployment_date → deployment_date + 90 days
+//   all = deployment_date → now (everything)
+//
+// This means 7D always shows first week, 30D always shows first month, etc.
+// "All Time" always shows everything up to today.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const HOPE_LEANING    = ["hope", "relief", "determination"];
+const DESPAIR_LEANING = ["grief", "anger", "anxiety", "regret", "longing"];
+
+// Deployment date — the day the project went live
+// Update this to your actual deployment date
+const DEPLOYMENT_DATE = "2026-03-01T00:00:00.000Z";
+
+const THRESHOLD = 10; // min submissions to appear (change to 50 for production)
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-// ─── CONSTANTS ────────────────────────────────────────────────────────────────
-const MIN_THRESHOLD = 50;
-const PERIODS = ["7d", "30d", "90d"] as const;
-type Period = typeof PERIODS[number];
+// ── Period windows ─────────────────────────────────────────────────────────────
+// Returns { since, until } for each period
+// since = deployment date
+// until = deployment + N days  (null = now, i.e. "all time")
+function getPeriodWindow(period: string): { since: string; until: string | null } {
+  const deploy = new Date(DEPLOYMENT_DATE);
+  const now    = new Date();
 
-const PERIOD_DAYS: Record<Period, number> = {
-  "7d":  7,
-  "30d": 30,
-  "90d": 90,
-};
+  const since = DEPLOYMENT_DATE;
 
-const HOPE_EMOTIONS    = ["hope", "relief", "determination"];
-const DESPAIR_EMOTIONS = ["grief", "anger", "anxiety", "regret", "longing"];
-const ALL_EMOTIONS     = [...HOPE_EMOTIONS, ...DESPAIR_EMOTIONS];
+  if (period === "all") {
+    return { since, until: null }; // from deploy to now
+  }
 
-// ─── MATH HELPERS ─────────────────────────────────────────────────────────────
+  const days  = period === "7d" ? 7 : period === "30d" ? 30 : 90;
+  const until = new Date(deploy.getTime() + days * 24 * 60 * 60 * 1000).toISOString();
 
-// ESI = Emotional Stability Index
-// Based on normalized Shannon entropy — higher = more emotionally diverse = more stable
-function computeESI(dist: Record<string, number>): number {
-  const values = Object.values(dist).filter(v => v > 0);
-  if (values.length === 0) return 0;
+  // If we haven't reached the end of the window yet, clamp to now
+  const clampedUntil = new Date(until) > now ? null : until;
 
-  const entropy = values.reduce((sum, p) => {
-    return sum - (p * Math.log(p));
-  }, 0);
-
-  const maxEntropy = Math.log(8); // 8 possible emotions
-  return Math.min(Math.round((entropy / maxEntropy) * 1000) / 1000, 1);
+  return { since, until: clampedUntil };
 }
 
-// HDR = Hope / Despair Ratio
-// > 1.0 = hope-leaning, < 1.0 = despair-leaning
-function computeHDR(dist: Record<string, number>): number {
-  const hopeSum   = HOPE_EMOTIONS.reduce((s, e) => s + (dist[e] || 0), 0);
-  const despairSum = DESPAIR_EMOTIONS.reduce((s, e) => s + (dist[e] || 0), 0);
-
-  if (despairSum === 0) return hopeSum > 0 ? 3.0 : 1.0; // all hope, cap at 3.0
-  return Math.round((hopeSum / despairSum) * 1000) / 1000;
-}
-
-// Emotion distribution — returns proportions (0–1) for each emotion
-function computeDistribution(
-  submissions: { emotion: string }[]
-): Record<string, number> {
-  const total = submissions.length;
-  if (total === 0) return {};
-
+// ── Math helpers ───────────────────────────────────────────────────────────────
+function computeEmotionDist(rows: { emotion: string }[]): Record<string, number> {
+  if (!rows.length) return {};
   const counts: Record<string, number> = {};
-  ALL_EMOTIONS.forEach(e => counts[e] = 0);
-
-  submissions.forEach(s => {
-    if (counts[s.emotion] !== undefined) {
-      counts[s.emotion]++;
-    }
-  });
-
+  for (const r of rows) counts[r.emotion] = (counts[r.emotion] || 0) + 1;
+  const total = rows.length;
   const dist: Record<string, number> = {};
-  ALL_EMOTIONS.forEach(e => {
-    if (counts[e] > 0) {
-      dist[e] = Math.round((counts[e] / total) * 1000) / 1000;
-    }
-  });
-
+  for (const [k, v] of Object.entries(counts)) dist[k] = v / total;
   return dist;
 }
 
-// Dominant emotion — the one with the highest percentage
-function getDominantEmotion(dist: Record<string, number>): string {
-  return Object.entries(dist).sort((a, b) => b[1] - a[1])[0]?.[0] || "unknown";
+function computeESI(dist: Record<string, number>): number {
+  const values = Object.values(dist).filter(v => v > 0);
+  if (!values.length) return 0;
+  const entropy = -values.reduce((sum, p) => sum + p * Math.log(p), 0);
+  return Math.round((entropy / Math.log(9)) * 1000) / 1000;
 }
 
-// Get date range for a period
-function getDateRange(periodDays: number): { from: string; to: string } {
-  const to   = new Date();
-  const from = new Date();
-  from.setDate(from.getDate() - periodDays);
-  return {
-    from: from.toISOString(),
-    to:   to.toISOString(),
-  };
+function computeHDR(dist: Record<string, number>): number {
+  const hope    = HOPE_LEANING.reduce((s, k) => s + (dist[k] || 0), 0);
+  const despair = DESPAIR_LEANING.reduce((s, k) => s + (dist[k] || 0), 0);
+  if (despair === 0) return hope > 0 ? 2.0 : 1.0;
+  return Math.round((hope / despair) * 1000) / 1000;
 }
 
-// Get date range for the PREVIOUS equivalent period (for velocity calculation)
-function getPreviousDateRange(periodDays: number): { from: string; to: string } {
-  const to   = new Date();
-  const from = new Date();
-  to.setDate(to.getDate() - periodDays);
-  from.setDate(from.getDate() - periodDays * 2);
-  return {
-    from: from.toISOString(),
-    to:   to.toISOString(),
-  };
+function computeVelocity(currentESI: number, previousESI: number | null): number {
+  if (previousESI === null) return 0;
+  return Math.round((currentESI - previousESI) * 1000) / 1000;
 }
 
-// Get current week number
-function getWeekNumber(): number {
-  const d = new Date();
+function dominantEmotion(dist: Record<string, number>): string {
+  if (!Object.keys(dist).length) return "hope";
+  return Object.entries(dist).sort((a, b) => b[1] - a[1])[0][0];
+}
+
+function getWeekNumber(date: Date): number {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
   const dayNum = d.getUTCDay() || 7;
   d.setUTCDate(d.getUTCDate() + 4 - dayNum);
   const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
   return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
 }
 
-// ─── MAIN HANDLER ─────────────────────────────────────────────────────────────
+// ── Main ───────────────────────────────────────────────────────────────────────
 Deno.serve(async (req: Request) => {
-
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  // Require service role key for aggregation — this should never be called by public
-  const authHeader = req.headers.get("Authorization");
-  if (!authHeader) {
-    return new Response(
-      JSON.stringify({ error: "Unauthorized" }),
-      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  }
-
-  const supabase = createClient(
+  const admin = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   );
 
+  const now     = new Date();
+  const results: Record<string, unknown> = {};
+  const PERIODS = ["7d", "30d", "90d", "all"];
+
   try {
-    const results = {
-      lgus_processed:  0,
-      lgus_visible:    0,
-      lgus_below_threshold: 0,
-      national:        {} as Record<Period, object>,
-      errors:          [] as string[],
-    };
-
-    // ─── FETCH ALL ACTIVE LGUs ────────────────────────────────────────────────
-    const { data: lgus, error: lguError } = await supabase
-      .from("lgus")
-      .select("id, name, region_id")
-      .eq("active", true)
-      .limit(2000);
-
-    if (lguError || !lgus) {
-      throw new Error(`Failed to fetch LGUs: ${lguError?.message}`);
-    }
-
-    // ─── PROCESS EACH PERIOD ──────────────────────────────────────────────────
     for (const period of PERIODS) {
-      const periodDays   = PERIOD_DAYS[period];
-      const { from, to } = getDateRange(periodDays);
-      const { from: prevFrom, to: prevTo } = getPreviousDateRange(periodDays);
+      const { since, until } = getPeriodWindow(period);
 
-      // Fetch ALL submissions for this period in one query (more efficient)
-      const { data: allSubmissions, error: subError } = await supabase
+      // ── 1. Fetch submissions in this period window ───────────────────────
+      let subsQuery = admin
         .from("submissions")
         .select("lgu_id, emotion, intensity")
-        .gte("submitted_at", from)
-        .lte("submitted_at", to);
+        .gte("submitted_at", since);
 
-      if (subError) {
-        results.errors.push(`Period ${period}: ${subError.message}`);
+      if (until) subsQuery = subsQuery.lte("submitted_at", until);
+
+      const { data: subs, error: subsErr } = await subsQuery;
+      if (subsErr) throw new Error(`submissions fetch [${period}]: ${subsErr.message}`);
+      if (!subs?.length) {
+        results[period] = { lgu: 0, province: 0, national: false, submissions: 0 };
         continue;
       }
 
-      // Fetch previous period submissions (for velocity)
-      const { data: prevSubmissions } = await supabase
-        .from("submissions")
-        .select("lgu_id, emotion")
-        .gte("submitted_at", prevFrom)
-        .lte("submitted_at", prevTo);
+      // ── 2. Previous LGU ESI for velocity ────────────────────────────────
+      const { data: prevAggs } = await admin
+        .from("lgu_aggregations")
+        .select("lgu_id, esi")
+        .eq("period", period);
 
-      // Group submissions by LGU
+      const prevESIMap: Record<string, number> = {};
+      for (const p of prevAggs || []) prevESIMap[p.lgu_id] = p.esi;
+
+      // ── 3. Group by LGU ─────────────────────────────────────────────────
       const byLgu: Record<string, { emotion: string; intensity: number }[]> = {};
-      const prevByLgu: Record<string, { emotion: string }[]> = {};
-
-      (allSubmissions || []).forEach(s => {
+      for (const s of subs) {
         if (!byLgu[s.lgu_id]) byLgu[s.lgu_id] = [];
-        byLgu[s.lgu_id].push(s);
-      });
+        byLgu[s.lgu_id].push({ emotion: s.emotion, intensity: s.intensity });
+      }
 
-      (prevSubmissions || []).forEach(s => {
-        if (!prevByLgu[s.lgu_id]) prevByLgu[s.lgu_id] = [];
-        prevByLgu[s.lgu_id].push(s);
-      });
+      // LGU → province mapping
+      const lguIds = Object.keys(byLgu);
+      const { data: lguMeta } = await admin
+        .from("lgus")
+        .select("id, province_id")
+        .in("id", lguIds);
 
-      // ─── AGGREGATE EACH LGU ───────────────────────────────────────────────
-      for (const lgu of lgus) {
-        const subs     = byLgu[lgu.id] || [];
-        const prevSubs = prevByLgu[lgu.id] || [];
-        const count    = subs.length;
-        const meetsThreshold = count >= MIN_THRESHOLD;
+      const lguProvinceMap: Record<string, string> = {};
+      for (const l of lguMeta || []) lguProvinceMap[l.id] = l.province_id;
 
-        if (period === "7d") results.lgus_processed++;
+      // ── 4. LGU aggregations ──────────────────────────────────────────────
+      const lguRows = [];
+      const byProvince: Record<string, { dist: Record<string, number>; count: number }> = {};
 
-        let aggregation: Record<string, unknown> = {
-          lgu_id:           lgu.id,
-          period,
-          computed_at:      new Date().toISOString(),
+      for (const [lgu_id, rows] of Object.entries(byLgu)) {
+        const dist     = computeEmotionDist(rows);
+        const esi      = computeESI(dist);
+        const hdr      = computeHDR(dist);
+        const velocity = computeVelocity(esi, prevESIMap[lgu_id] ?? null);
+        const dominant = dominantEmotion(dist);
+        const count    = rows.length;
+
+        lguRows.push({
+          lgu_id, period,
+          computed_at:      now.toISOString(),
           submission_count: count,
-          meets_threshold:  meetsThreshold,
-          emotion_dist:     {},
-          esi:              null,
-          hdr:              null,
-          velocity:         null,
-          dominant_emotion: null,
-          narrative:        null,
-          drift_note:       null,
-        };
+          meets_threshold:  count >= THRESHOLD,
+          emotion_dist:     dist,
+          dominant_emotion: dominant,
+          esi, hdr, velocity,
+          period_since:     since,
+          period_until:     until || now.toISOString(),
+        });
 
-        if (meetsThreshold) {
-          const dist     = computeDistribution(subs);
-          const prevDist = prevSubs.length >= MIN_THRESHOLD
-            ? computeDistribution(prevSubs)
-            : null;
-
-          const esi      = computeESI(dist);
-          const prevESI  = prevDist ? computeESI(prevDist) : null;
-          const velocity = prevESI !== null
-            ? Math.round((esi - prevESI) * 1000) / 1000
-            : null;
-
-          const hdr      = computeHDR(dist);
-          const dominant = getDominantEmotion(dist);
-
-          aggregation = {
-            ...aggregation,
-            emotion_dist:     dist,
-            esi,
-            hdr,
-            velocity,
-            dominant_emotion: dominant,
-          };
-
-          if (period === "7d") results.lgus_visible++;
-        } else {
-          if (period === "7d") results.lgus_below_threshold++;
-        }
-
-        // Upsert aggregation (insert or update)
-        const { error: upsertError } = await supabase
-          .from("lgu_aggregations")
-          .upsert(aggregation, { onConflict: "lgu_id,period" });
-
-        if (upsertError) {
-          results.errors.push(`LGU ${lgu.name} ${period}: ${upsertError.message}`);
+        // Accumulate for province rollup
+        const province_id = lguProvinceMap[lgu_id];
+        if (province_id) {
+          if (!byProvince[province_id]) byProvince[province_id] = { dist: {}, count: 0 };
+          for (const [em, pct] of Object.entries(dist)) {
+            byProvince[province_id].dist[em] =
+              (byProvince[province_id].dist[em] || 0) + pct * count;
+          }
+          byProvince[province_id].count += count;
         }
       }
 
-      // ─── NATIONAL AGGREGATION ─────────────────────────────────────────────
-      const allSubs  = allSubmissions || [];
-      const prevSubs = prevSubmissions || [];
+      await admin.from("lgu_aggregations")
+        .upsert(lguRows, { onConflict: "lgu_id,period" });
 
-      if (allSubs.length > 0) {
-        const natDist     = computeDistribution(allSubs);
-        const prevNatDist = prevSubs.length > 0 ? computeDistribution(prevSubs) : null;
+      // ── 5. Province aggregations ─────────────────────────────────────────
+      const provinceRows = [];
+      for (const [province_id, data] of Object.entries(byProvince)) {
+        const normDist: Record<string, number> = {};
+        for (const [em, raw] of Object.entries(data.dist))
+          normDist[em] = raw / data.count;
 
-        const natESI     = computeESI(natDist);
-        const prevNatESI = prevNatDist ? computeESI(prevNatDist) : null;
-        const natVelocity = prevNatESI !== null
-          ? Math.round((natESI - prevNatESI) * 1000) / 1000
-          : null;
-
-        const natHDR      = computeHDR(natDist);
-        const natDominant = getDominantEmotion(natDist);
-        const activeLgus  = Object.keys(byLgu).filter(
-          id => (byLgu[id]?.length || 0) >= MIN_THRESHOLD
-        ).length;
-
-        const weekNum = getWeekNumber();
-        const year    = new Date().getFullYear();
-
-        await supabase
-          .from("national_aggregations")
-          .upsert({
-            period,
-            week_number:      weekNum,
-            year,
-            computed_at:      new Date().toISOString(),
-            submission_count: allSubs.length,
-            active_lgus:      activeLgus,
-            emotion_dist:     natDist,
-            esi:              natESI,
-            hdr:              natHDR,
-            velocity:         natVelocity,
-            dominant_emotion: natDominant,
-          }, { onConflict: "period,week_number,year" });
-
-        results.national[period] = {
-          submissions: allSubs.length,
-          esi:         natESI,
-          hdr:         natHDR,
-          dominant:    natDominant,
-          active_lgus: activeLgus,
-        };
+        provinceRows.push({
+          province_id, period,
+          computed_at:      now.toISOString(),
+          submission_count: data.count,
+          meets_threshold:  data.count >= THRESHOLD,
+          emotion_dist:     normDist,
+          dominant_emotion: dominantEmotion(normDist),
+          esi:              computeESI(normDist),
+          hdr:              computeHDR(normDist),
+          velocity:         0,
+        });
       }
+
+      if (provinceRows.length) {
+        await admin.from("province_aggregations")
+          .upsert(provinceRows, { onConflict: "province_id,period" });
+      }
+
+      // ── 6. National aggregation ──────────────────────────────────────────
+      const nationalDist = computeEmotionDist(subs);
+      const nationalESI  = computeESI(nationalDist);
+      const nationalHDR  = computeHDR(nationalDist);
+
+      const { data: prevNational } = await admin
+        .from("national_aggregations")
+        .select("esi")
+        .eq("period", period)
+        .order("computed_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      await admin.from("national_aggregations")
+        .upsert({
+          period,
+          week_number:      period !== "all" ? getWeekNumber(now) : 0,
+          year:             period !== "all" ? now.getUTCFullYear() : 0,
+          computed_at:      now.toISOString(),
+          submission_count: subs.length,
+          active_lgus:      Object.keys(byLgu).length,
+          emotion_dist:     nationalDist,
+          dominant_emotion: dominantEmotion(nationalDist),
+          esi:              nationalESI,
+          hdr:              nationalHDR,
+          velocity:         computeVelocity(nationalESI, prevNational?.esi ?? null),
+        }, { onConflict: "period,week_number,year" });
+
+      results[period] = {
+        submissions: subs.length,
+        lgu:         lguRows.length,
+        province:    provinceRows.length,
+        national:    true,
+        window:      { since, until: until || "now" },
+      };
     }
 
-    // ─── CLEAN UP OLD RATE LIMITS ─────────────────────────────────────────────
-    // Delete rate limit records older than 2 days — they're useless after salt rotation
-    const twoDaysAgo = new Date();
-    twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
-    await supabase
-      .from("rate_limits")
-      .delete()
-      .lt("date_bucket", twoDaysAgo.toISOString().split("T")[0]);
-
     return new Response(
-      JSON.stringify({ success: true, ...results }),
+      JSON.stringify({ success: true, computed_at: now.toISOString(), results }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
   } catch (err) {
     console.error("Aggregation error:", err);
     return new Response(
-      JSON.stringify({ error: String(err) }),
+      JSON.stringify({ error: "Aggregation failed", detail: String(err) }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
