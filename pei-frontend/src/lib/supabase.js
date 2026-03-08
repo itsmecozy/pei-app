@@ -8,8 +8,6 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 // ─── ANONYMOUS INDEX ──────────────────────────────────────────────────────────
 
 export async function submitEmotion({ lgu_id, emotion, intensity, text }) {
-  // Always use anon key for gateway (prevents 401)
-  // Try to get user session for tier detection — but never let it block the submission
   let userToken = null
   try {
     const { data } = await supabase.auth.getSession()
@@ -25,7 +23,19 @@ export async function submitEmotion({ lgu_id, emotion, intensity, text }) {
     },
     body: JSON.stringify({ lgu_id, emotion, intensity, text }),
   })
-  return response.json()
+  const result = await response.json()
+
+  // Auto-trigger aggregation after every submission so Dashboard/Map/Trends
+  // reflect the new data immediately. Fire-and-forget — don't block the UI.
+  fetch(`${SUPABASE_URL}/functions/v1/aggregate-emotions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+    },
+  }).catch(() => { /* silent fail — aggregation is best-effort */ })
+
+  return result
 }
 
 export async function searchLGUs(term) {
