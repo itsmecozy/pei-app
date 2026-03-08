@@ -168,6 +168,7 @@ export default function DashboardPage({ navigate }) {
               : <PhilippinesMap
                   provinceAggs={provinceAggs}
                   lgus={lgus}
+                  selected={hoveredInfo?.type === "lgu" ? hoveredInfo.data : null}
                   onSelectLgu={lgu => setHoveredInfo({ name:lgu.lgus?.name, type:"lgu", data:lgu })}
                   onSelectProvince={pc => setHoveredInfo({ name:pc.name, type:"province", data:pc })}
                   width={bp==="mobile"?260:300}
