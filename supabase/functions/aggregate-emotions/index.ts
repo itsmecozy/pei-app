@@ -34,7 +34,7 @@ const DEPLOYMENT_DATE = "2026-03-01T00:00:00.000Z";
 
 // Minimum submissions for an LGU or province to appear publicly.
 // 10 for development/testing. Change to 50 before public launch.
-const THRESHOLD = 10;
+const THRESHOLD = 1; // TEMP: change back to 10 (dev) or 50 (prod) before launch
 
 const HOPE_LEANING    = ["hope", "relief", "determination"];
 const DESPAIR_LEANING = ["grief", "anger", "anxiety", "regret", "longing"];
