@@ -1,4 +1,9 @@
-// PEI SUBMIT EMOTION - no rate limiting (test mode)
+// PEI SUBMIT EMOTION — v2
+// Changes:
+//   - Added "calm" to VALID_EMOTIONS
+//   - Added submitted_at to insert (was missing — caused aggregation to miss entries)
+//   - Added bypass list for dev/admin accounts (no rate limit)
+//   - Increased limits: anonymous=3, trial=5, paid=10 for testing
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -7,10 +12,17 @@ const VALID_EMOTIONS = [
   "grief", "relief", "determination", "regret", "calm"
 ];
 
-const LIMITS = { anonymous: 1, trial: 2, paid: 3 };
+// Dev/admin user IDs — no rate limit applied
+// Add your user ID here to bypass limits during testing
+const DEV_USER_IDS: string[] = [
+  "922b57c4-58d2-4dca-8f3e-f54fad64e660",
+  "3285c988-9693-4ba4-8fcb-137fcc5b631e",
+];
+
+const LIMITS = { anonymous: 3, trial: 5, paid: 10 };
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin":  "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-user-token",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
@@ -43,14 +55,13 @@ Deno.serve(async (req: Request) => {
     const body = await req.json();
     const { lgu_id, emotion, intensity, text } = body;
 
-    // Basic validation
+    // Validate
     if (!lgu_id || !emotion || !VALID_EMOTIONS.includes(emotion.toLowerCase())) {
-      return new Response(JSON.stringify({ error: "Invalid input" }),
+      return new Response(JSON.stringify({ error: "Invalid emotion or missing LGU" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-
     if (!intensity || intensity < 1 || intensity > 5) {
-      return new Response(JSON.stringify({ error: "Intensity must be 1-5" }),
+      return new Response(JSON.stringify({ error: "Intensity must be 1–5" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
@@ -59,57 +70,69 @@ Deno.serve(async (req: Request) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // ── Detect user tier ────────────────────────────────────────────────────
+    // ── Detect user tier ──────────────────────────────────────────────────
     let userTier: "anonymous" | "trial" | "paid" = "anonymous";
     let userId: string | null = null;
+    let isDevUser = false;
 
     const userToken = req.headers.get("x-user-token");
     if (userToken) {
       try {
         const { data: { user }, error } = await admin.auth.getUser(userToken);
         if (!error && user) {
-          userId = user.id;
+          userId   = user.id;
+          isDevUser = DEV_USER_IDS.includes(user.id);
           const { data: prof } = await admin
-            .from("user_profiles").select("plan_activated_at").eq("id", user.id).single();
-          userTier = prof?.plan_activated_at ? "paid" : "trial";
+            .from("user_profiles").select("plan").eq("id", user.id).single();
+          const plan = prof?.plan || "trial";
+          userTier = (plan === "seasonal" || plan === "lifetime") ? "paid" : "trial";
         }
       } catch { /* treat as anonymous */ }
     }
 
-    const maxAllowed = LIMITS[userTier];
-    const salt = getDailySalt();
-    const today = new Date().toISOString().split("T")[0];
-    const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() || "unknown";
-    const ua = req.headers.get("user-agent") || "unknown";
+    // ── Rate limit check (skip for dev users) ────────────────────────────
+    if (!isDevUser) {
+      const maxAllowed  = LIMITS[userTier];
+      const salt        = getDailySalt();
+      const today       = new Date().toISOString().split("T")[0];
+      const ip          = req.headers.get("x-forwarded-for")?.split(",")[0].trim() || "unknown";
+      const ua          = req.headers.get("user-agent") || "unknown";
+      const rateKey     = userId
+        ? await hashWithSalt(userId, salt)
+        : await hashWithSalt(await hashWithSalt(ip, salt) + await hashWithSalt(ua, salt), salt);
 
-    const rateKey = userId
-      ? await hashWithSalt(userId, salt)
-      : await hashWithSalt(await hashWithSalt(ip, salt) + await hashWithSalt(ua, salt), salt);
+      const { data: rateData, error: rateErr } = await admin
+        .from("rate_limits").select("count")
+        .eq("hash_key", rateKey).eq("date_bucket", today).maybeSingle();
 
-    // ── Rate limit check ────────────────────────────────────────────────────
-    const { data: rateData, error: rateErr } = await admin
-      .from("rate_limits").select("count")
-      .eq("hash_key", rateKey).eq("date_bucket", today).maybeSingle();
+      if (rateErr) {
+        return new Response(JSON.stringify({ error: "Service error. Please try again." }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
 
-    if (rateErr) {
-      console.error("Rate limit error:", rateErr);
-      return new Response(JSON.stringify({ error: "Service error. Please try again." }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      const currentCount = rateData?.count || 0;
+      if (currentCount >= maxAllowed) {
+        const messages = {
+          anonymous: "You've reached today's limit. Sign in for more daily submissions.",
+          trial:     "You've reached today's limit. Come back tomorrow or upgrade.",
+          paid:      "You've reached today's limit. Come back tomorrow.",
+        };
+        return new Response(
+          JSON.stringify({ error: messages[userTier], code: "RATE_LIMITED" }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // Update rate limit counter
+      if (!rateData) {
+        await admin.from("rate_limits").insert({ hash_key: rateKey, date_bucket: today, count: 1 });
+      } else {
+        await admin.from("rate_limits")
+          .update({ count: currentCount + 1 })
+          .eq("hash_key", rateKey).eq("date_bucket", today);
+      }
     }
 
-    const currentCount = rateData?.count || 0;
-    if (currentCount >= maxAllowed) {
-      const messages = {
-        anonymous: "You've already submitted today. Sign in for more daily submissions.",
-        trial:     "You've submitted twice today. Come back tomorrow — or upgrade for 3/day.",
-        paid:      "You've submitted 3 times today. Come back tomorrow. Your streak is safe.",
-      };
-      return new Response(
-        JSON.stringify({ error: messages[userTier], code: "RATE_LIMITED" }),
-        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-
-    // Verify LGU
+    // ── Verify LGU ───────────────────────────────────────────────────────
     const { data: lguData, error: lguErr } = await admin
       .from("lgus").select("id, name")
       .eq("id", lgu_id).eq("active", true).single();
@@ -119,15 +142,16 @@ Deno.serve(async (req: Request) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Insert
+    // ── Insert submission ────────────────────────────────────────────────
     const now = new Date();
     const { error: insertErr } = await admin.from("submissions").insert({
       lgu_id,
-      emotion: emotion.toLowerCase(),
+      emotion:      emotion.toLowerCase(),
       intensity,
-      week_number: getWeekNumber(now),
-      year: now.getUTCFullYear(),
-      text_signal: null,
+      submitted_at: now.toISOString(), // ← critical: must be set for aggregation windows
+      week_number:  getWeekNumber(now),
+      year:         now.getUTCFullYear(),
+      text_signal:  null,
     });
 
     if (insertErr) {
@@ -136,21 +160,12 @@ Deno.serve(async (req: Request) => {
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // ── Update rate limit ───────────────────────────────────────────────────
-    if (!rateData) {
-      await admin.from("rate_limits").insert({ hash_key: rateKey, date_bucket: today, count: 1 });
-    } else {
-      await admin.from("rate_limits")
-        .update({ count: currentCount + 1 })
-        .eq("hash_key", rateKey).eq("date_bucket", today);
-    }
-
     return new Response(
       JSON.stringify({
         acknowledged: true,
-        lgu: lguData.name,
-        tier: userTier,
-        submissions_remaining: maxAllowed - (currentCount + 1),
+        lgu:          lguData.name,
+        tier:         userTier,
+        dev_bypass:   isDevUser,
       }),
       { status: 201, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
