@@ -7,7 +7,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { EMOTION_MAP } from "../../constants/emotions";
 
 // jsDelivr CDN URL for low-res province GeoJSON (small file, fast load)
-const GEOJSON_URL =
+const GEOJSON_URL = "/ph-provinces.json"; // local static asset in public/
   "https://cdn.jsdelivr.net/gh/faeldon/philippines-json-maps@master/2023/geojson/provdists/lowres/provinces-lowres.0.1.json";
 
 // Province name normalization — maps GeoJSON names → our province_key format
