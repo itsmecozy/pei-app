@@ -159,7 +159,7 @@ export default function SubmissionModal({ open, onClose, onSuccess, homeLguId, h
                   <div style={{ marginTop:"0.75rem", background:`${T.teal}08`,
                     border:`1px solid ${T.teal}15`, padding:"0.6rem 0.7rem",
                     fontFamily:"DM Mono", fontSize:"0.54rem", color:T.muted }}>
-                    <span style={{ color:T.teal }}>Fully anonymous.</span> No IP. No device ID. No tracking.
+                    No account required. We store your city, your emotion, and a timestamp — nothing else.
                   </div>
                 </div>
               )}
@@ -297,7 +297,7 @@ export default function SubmissionModal({ open, onClose, onSuccess, homeLguId, h
                   opacity:submitting||(step===1&&!selectedLgu)||(step===2&&!emotion)?0.45:1 }}
                 onMouseEnter={e=>{ if(!submitting) e.currentTarget.style.background="#fff"; }}
                 onMouseLeave={e=>e.currentTarget.style.background=T.amber}>
-                {submitting ? "Submitting..." : step === 3 ? "Submit Anonymously" : "Continue →"}
+                {submitting ? "Submitting..." : step === 3 ? "Submit" : "Continue →"}
               </button>
             </div>
           </div>
