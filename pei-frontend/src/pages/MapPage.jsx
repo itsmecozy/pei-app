@@ -350,10 +350,6 @@ export default function MapPage({ openModal }) {
           borderBottom:bp!=="desktop"?`1px solid ${T.border}`:"none" }}>
           {loading ? (
             <Skeleton height={420} width={260} />
-          ) : lgus.length === 0 && provinceAggs.length === 0 ? (
-            <EmptyState icon="◉" title="Map is waiting"
-              body="Cities and provinces appear once they reach the submission threshold."
-              cta="Submit Your Feeling" onCta={openModal} />
           ) : (
             <div style={{ width:"100%", maxWidth:bp==="mobile"?260:340 }}>
               <PhilippinesMap
@@ -367,8 +363,10 @@ export default function MapPage({ openModal }) {
               />
               <p style={{ fontSize:"0.55rem", color:T.muted,
                 textAlign:"center", marginTop:6 }}>
-                {provinceAggs.filter(p=>p.meets_threshold).length} provinces ·{" "}
-                {lgus.length} active {lgus.length===1?"LGU":"LGUs"} · click to explore
+                {lgus.length > 0
+                  ? `${provinceAggs.filter(p=>p.meets_threshold).length} provinces · ${lgus.length} active ${lgus.length===1?"LGU":"LGUs"} · click to explore`
+                  : "Provinces and cities appear once they reach the submission threshold"
+                }
               </p>
             </div>
           )}
