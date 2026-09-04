@@ -27,14 +27,14 @@ export function PrivacyPolicyPage() {
   const T = useT();
   return <DocPage
     label="Legal" title="Privacy Policy"
-    subtitle="Last updated March 2026. This policy covers data collected through anonymous submissions on pei.ph."
+    subtitle="Last updated March 2026. This policy covers data collected through submissions on pei.ph."
     sections={[
       { title:"What we collect", body:"When you submit a feeling, we collect: your selected emotion, intensity rating (1–5), your city or municipality (LGU), an optional short text (max 150 characters), and a timestamp. We do not collect your name, email, IP address, or any identifying information." },
-      { title:"What we do NOT collect", body:"We do not collect IP addresses, device fingerprints, geolocation data, cookies, browser identifiers, or any information that could link a submission back to an individual. Anonymity is architectural — not a policy promise." },
-      { title:"How data is stored", body:"Submissions are held for 72 hours before being fully aggregated into community-level statistics. Optional text is processed for emotional signal only and is discarded — it is never stored in raw form. After aggregation, no individual submission record exists." },
+      { title:"What we collect", body:"We store three things per submission: a city code, an emotion, and a timestamp. For rate limiting, we store a hashed device key that resets daily — the raw key is never stored. We do not collect names, email addresses, geolocation, or cookies." },
+      { title:"How data is stored", body:"Submissions are stored indefinitely for longitudinal research purposes. This is what makes PEI useful as a long-term dataset. Individual submissions are never displayed — only community-level aggregations are shown publicly." },
       { title:"How data is displayed", body:"Data is only displayed at the community level. A city or municipality must reach a minimum of 50 submissions before it appears in the index. No individual submission is ever shown or retrievable." },
       { title:"Third parties", body:"We do not sell, share, or transfer data to commercial third parties. Academic research partnerships may receive anonymized, aggregated datasets only — never individual submissions. Any research partnership is disclosed publicly." },
-      { title:"Your rights", body:"Because we do not collect identifying information, there is no individual record to request, correct, or delete. This is by design. The system cannot identify you even if compelled to do so." },
+      { title:"Your rights", body:"If you created an account, you may request deletion of your profile and personal submission history by contacting us. Anonymous submissions cannot be individually identified or deleted — they exist only as part of community-level aggregates." },
       { title:"Changes to this policy", body:"We will update this page when our practices change. Significant changes will be announced on the homepage. Continued use of the index constitutes acceptance of the current policy." },
     ]} />;
 }
@@ -46,15 +46,15 @@ export function AnonymityFrameworkPage() {
     { num:"01", title:"No Persistent IP Storage",     body:"Your IP address is used only for rate-limiting at the edge. It is never written to the database.",                                                           color:T.teal    },
     { num:"02", title:"Daily Rotating Salt",           body:"Each submission hash uses a salt that rotates every 24 hours. Yesterday's hashes are cryptographically unrecoverable today.",                              color:T.amber   },
     { num:"03", title:"No Device Fingerprinting",      body:"We do not collect browser type, screen size, OS, installed fonts, canvas fingerprints, or any device-level identifiers.",                                 color:"#a78bfa" },
-    { num:"04", title:"Text-Ephemeral Processing",     body:"Optional text submissions are analyzed for emotional signal in memory only. The raw text is never persisted to disk or database.",                         color:"#fb923c" },
+    { num:"04", title:"No Text Collection",            body:"PEI does not collect free-text input. You submit one emotion and a city — nothing else. There is no text field, no comment box, nothing to analyze or store.",              color:"#fb923c" },
     { num:"05", title:"Community Threshold Gating",    body:"No city appears on the index until it reaches 50 submissions. Isolated individuals cannot be inferred from sparse data.",                                  color:"#10b981" },
-    { num:"06", title:"Aggregation-Before-Storage",    body:"After 72 hours, individual submission records are aggregated and the source records are deleted. The pattern survives. The person does not.",              color:T.rose    },
+    { num:"06", title:"Long-term Retention",           body:"Submissions are retained as part of a longitudinal research dataset. Individual records are never displayed. The smallest public unit is always a community, not a person.",  color:T.rose    },
   ];
   return (
     <div>
       <div style={{ padding:bp==="mobile"?"0 1.25rem":"0" }}>
         <PageHeader label="Legal" title="Anonymity Framework"
-          subtitle="Six architectural layers that make individual identification impossible — not just unlikely." />
+          subtitle="How PEI handles your data — honestly." />
       </div>
       <div style={{ padding:bp==="mobile"?"0 1.25rem":"0" }}>
         <div style={{ display:"grid",
@@ -78,7 +78,7 @@ export function AnonymityFrameworkPage() {
             textTransform:"uppercase", color:T.teal, marginBottom:"0.5rem" }}>Design Principle</div>
           <p style={{ fontFamily:"'Playfair Display',serif", fontStyle:"italic",
             fontSize:"1rem", lineHeight:1.7, color:T.text, margin:0 }}>
-            "Anonymity by architecture means that compelled disclosure yields no identifying information.
+            "We built PEI around a simple principle: collect only what is necessary, display only what is safe.
             There is nothing to hand over — not because we refuse, but because it does not exist."
           </p>
         </div>
