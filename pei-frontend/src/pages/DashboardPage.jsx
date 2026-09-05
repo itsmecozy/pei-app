@@ -59,22 +59,27 @@ export default function DashboardPage({ navigate }) {
           subtitle="Philippine Emotional Index — aggregated from anonymous submissions across all cities and municipalities." />
       </div>
 
-      {/* Period selector */}
-      <div style={{ padding:bp==="mobile"?"0 1.25rem 1.25rem":"0 0 1.25rem",
-        display:"flex", gap:"0.25rem", flexWrap:"wrap" }}>
-        {["7d","30d","90d","all"].map(t => (
-          <button key={t} onClick={() => setPeriod(t)}
-            style={{ padding:"0.28rem 0.65rem", fontFamily:"DM Mono", fontSize:"0.56rem",
-              letterSpacing:"0.06em", border:`1px solid ${period===t?T.amber:T.border}`,
-              background:period===t?`${T.amber}15`:"none",
-              color:period===t?T.amber:T.muted, cursor:"pointer", transition:"all 0.2s" }}>
-            {t === "all" ? "ALL TIME" : t.toUpperCase()}
-          </button>
-        ))}
-        <span style={{ fontFamily:"DM Mono", fontSize:"0.5rem", color:T.muted,
-          display:"flex", alignItems:"center", paddingLeft:"0.25rem" }}>
-          {PERIOD_LABELS[period]}
-        </span>
+      {/* Period selector — pill group */}
+      <div style={{ padding:bp==="mobile"?"0 1.25rem 1.25rem":"0 0 1.25rem" }}>
+        <div style={{ display:"inline-flex", gap:2, padding:3,
+          background:T.surface, border:`1px solid ${T.border}` }}>
+          {[
+            { key:"7d",  label:"7D"       },
+            { key:"30d", label:"30D"      },
+            { key:"90d", label:"90D"      },
+            { key:"all", label:"All time" },
+          ].map(t => (
+            <button key={t.key} onClick={() => setPeriod(t.key)}
+              style={{ padding:"4px 14px",
+                background:period===t.key?T.bg:"transparent",
+                color:period===t.key?T.text:T.muted,
+                border:`1px solid ${period===t.key?T.border:"transparent"}`,
+                fontSize:"0.72rem", fontWeight:period===t.key?500:400,
+                cursor:"pointer", transition:"all 0.15s" }}>
+              {t.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Metric cards */}
