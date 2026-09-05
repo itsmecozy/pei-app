@@ -39,9 +39,26 @@ export async function submitEmotion({ lgu_id, emotion, intensity, text }) {
 }
 
 export async function searchLGUs(term) {
-  const { data, error } = await supabase.rpc('search_lgus', { search_term: term })
+  // Direct table query — no RPC needed
+  const { data, error } = await supabase
+    .from('lgus')
+    .select(`
+      id, name, lgu_type,
+      provinces ( name ),
+      regions ( name )
+    `)
+    .ilike('name', `%${term}%`)
+    .eq('active', true)
+    .order('name', { ascending: true })
+    .limit(10)
   if (error) throw error
-  return data || []
+  return (data || []).map(lgu => ({
+    id:       lgu.id,
+    name:     lgu.name,
+    lgu_type: lgu.lgu_type,
+    province: lgu.provinces?.name || '',
+    region:   lgu.regions?.name  || '',
+  }))
 }
 
 export async function getNational(period = '7d') {
