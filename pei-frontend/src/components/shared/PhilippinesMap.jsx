@@ -1,13 +1,12 @@
 // PhilippinesMap.jsx
-// Uses ph-provinces.json from simplemaps.com (place in public/ folder)
-// 67 provinces, clean name properties
+// GeoJSON: ph-provinces.json in public/ folder
+// Replace with faeldon/philippines-json-maps for full 82-province coverage
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { EMOTION_MAP } from "../../constants/emotions";
 
 const GEOJSON_URL = "/ph-provinces.json";
 
-// Normalize province name for matching
 function normalize(name) {
   return (name || "")
     .toLowerCase()
@@ -18,11 +17,9 @@ function normalize(name) {
     .trim();
 }
 
-// Project lng/lat → SVG x/y
-// PH bounding box: lng 116.9–126.6, lat 4.6–20.8
 function project(lng, lat, W, H) {
   const x = ((lng - 116.9) / (126.6 - 116.9)) * W;
-  const y = ((20.8  - lat) / (20.8  - 4.6))   * H;
+  const y = ((20.8 - lat)  / (20.8 - 4.6))    * H;
   return [x, y];
 }
 
@@ -54,6 +51,7 @@ export default function PhilippinesMap({
   const [features, setFeatures] = useState([]);
   const [loading,  setLoading]  = useState(true);
   const [error,    setError]    = useState(false);
+  const [hovered,  setHovered]  = useState(null);
 
   const W = width;
   const H = Math.round(width * 1.72);
@@ -65,11 +63,11 @@ export default function PhilippinesMap({
       .catch(() => { setError(true); setLoading(false); });
   }, []);
 
-  // Build province name → color map
+  // Build province name → aggregation data map
   const provinceColorMap = {};
   for (const agg of provinceAggs) {
     const key = normalize(agg.provinces?.name || "");
-    if (!key || !agg.dominant_emotion) continue;
+    if (!key) continue;
     const em = EMOTION_MAP[agg.dominant_emotion];
     provinceColorMap[key] = {
       hex:      em?.hex || "#6b7280",
@@ -82,10 +80,9 @@ export default function PhilippinesMap({
     };
   }
 
-  function getColor(feature) {
+  function getProvinceData(feature) {
     const key = normalize(feature.properties?.name || "");
     if (provinceColorMap[key]) return provinceColorMap[key];
-    // partial match fallback
     for (const [k, v] of Object.entries(provinceColorMap)) {
       if (key.includes(k) || k.includes(key)) return v;
     }
@@ -93,47 +90,55 @@ export default function PhilippinesMap({
   }
 
   if (loading) return (
-    <div style={{ width:W, height:200, display:"flex", alignItems:"center",
-      justifyContent:"center", fontFamily:"DM Mono", fontSize:"0.56rem", color:T.muted }}>
+    <div style={{ width:W, height:H*0.5, display:"flex", alignItems:"center",
+      justifyContent:"center", fontSize:"0.6rem", color:T.muted }}>
       Loading map…
     </div>
   );
 
   if (error) return (
     <div style={{ width:W, padding:"1rem", textAlign:"center",
-      fontFamily:"DM Mono", fontSize:"0.56rem", color:T.rose }}>
+      fontSize:"0.6rem", color:T.rose }}>
       Map unavailable — ph-provinces.json missing from public/
     </div>
   );
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`}
-      style={{ width:"100%", maxWidth:W, display:"block",
-        filter:"drop-shadow(0 2px 24px rgba(0,0,0,0.5))" }}>
+      style={{ width:"100%", maxWidth:W, display:"block" }}>
 
-      {/* Province fills */}
+      {/* Province fills — always clickable */}
       {features.map((feature, i) => {
-        const pc      = getColor(feature);
-        const pathD   = featureToPath(feature, W, H);
-        const fill    = pc?.hex || "#1a2535";
-        const opacity = pc ? 0.5 : 0.07;
+        const pc     = getProvinceData(feature);
+        const name   = feature.properties?.name || "";
+        const pathD  = featureToPath(feature, W, H);
+        const isHov  = hovered === i;
+        const fill   = pc?.hex || (T.surface || "#1a2535");
+        const op     = pc ? (isHov ? 0.85 : 0.55) : (isHov ? 0.18 : 0.08);
 
         return (
           <path key={i} d={pathD}
-            fill={fill} fillOpacity={opacity}
-            stroke="rgba(255,255,255,0.15)" strokeWidth={0.5}
-            style={{ cursor: pc ? "pointer" : "default", transition:"fill-opacity 0.2s" }}
-            onMouseEnter={e => e.currentTarget.setAttribute("fill-opacity", pc ? "0.82" : "0.12")}
-            onMouseLeave={e => e.currentTarget.setAttribute("fill-opacity", pc ? "0.5" : "0.07")}
-            onClick={() => pc && onSelectProvince && onSelectProvince(pc)}>
-            <title>
-              {feature.properties?.name}{pc ? ` — ${pc.dominant}` : " — no data"}
-            </title>
+            fill={fill}
+            fillOpacity={op}
+            stroke="rgba(255,255,255,0.12)"
+            strokeWidth={0.4}
+            style={{ cursor:"pointer", transition:"fill-opacity 0.15s" }}
+            onMouseEnter={() => setHovered(i)}
+            onMouseLeave={() => setHovered(null)}
+            onClick={() => {
+              if (pc) {
+                onSelectProvince && onSelectProvince(pc);
+              } else {
+                // Province has no data yet — still pass name for display
+                onSelectProvince && onSelectProvince({ name, dominant: null, count: 0 });
+              }
+            }}>
+            <title>{name}{pc ? ` — ${pc.dominant}` : " — no data yet"}</title>
           </path>
         );
       })}
 
-      {/* Active LGU city dots */}
+      {/* City dots */}
       {lgus.map(a => {
         const em    = EMOTION_MAP[a.dominant_emotion];
         const isSel = selected?.id === a.id;
@@ -144,21 +149,13 @@ export default function PhilippinesMap({
         return (
           <g key={a.id} onClick={() => onSelectLgu && onSelectLgu(a)}
             style={{ cursor:"pointer" }}>
-            <circle cx={x} cy={y} r={isSel ? 14 : 8}
-              fill={em?.hex || T.amber} opacity={0.18}
-              style={{ transition:"r 0.2s" }} />
-            <circle cx={x} cy={y} r={isSel ? 6 : 4}
+            <circle cx={x} cy={y} r={isSel ? 12 : 7}
+              fill={em?.hex || T.amber} opacity={0.2} />
+            <circle cx={x} cy={y} r={isSel ? 5 : 3.5}
               fill={em?.hex || T.amber}
-              stroke={isSel ? "#fff" : "rgba(255,255,255,0.4)"}
+              stroke={isSel ? "#fff" : "rgba(255,255,255,0.5)"}
               strokeWidth={isSel ? 1.5 : 0.5}
-              style={{ transition:"all 0.25s",
-                filter: isSel ? `drop-shadow(0 0 6px ${em?.hex})` : "none" }} />
-            {isSel && (
-              <text x={x + 9} y={y + 3}
-                fill="rgba(255,255,255,0.9)" fontSize="6.5" fontFamily="DM Mono">
-                {a.lgus?.name}
-              </text>
-            )}
+              style={{ filter: isSel ? `drop-shadow(0 0 5px ${em?.hex})` : "none" }} />
           </g>
         );
       })}
