@@ -106,7 +106,7 @@ export default function PhilippinesMap({
             d={scalePath(shape.d)}
             fill={fill}
             fillOpacity={op}
-            stroke="rgba(255,255,255,0.13)"
+            stroke="rgba(255,255,255,0.25)"
             strokeWidth={0.4}
             style={{ cursor:"pointer", transition:"fill-opacity 0.15s" }}
             onMouseEnter={() => setHovered(i)}
