@@ -358,7 +358,7 @@ export default function MapPage({ openModal }) {
                 selected={selectedLgu}
                 onSelectLgu={handleLguSelect}
                 onSelectProvince={handleProvSelect}
-                width={bp==="mobile"?260:340}
+                width={bp==="mobile"?220:300}
                 T={T}
               />
               <p style={{ fontSize:"0.55rem", color:T.muted,

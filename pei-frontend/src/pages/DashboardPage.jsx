@@ -176,7 +176,7 @@ export default function DashboardPage({ navigate }) {
                   selected={hoveredInfo?.type === "lgu" ? hoveredInfo.data : null}
                   onSelectLgu={lgu => setHoveredInfo({ name:lgu.lgus?.name, type:"lgu", data:lgu })}
                   onSelectProvince={pc => setHoveredInfo({ name:pc.name, type:"province", data:pc })}
-                  width={bp==="mobile"?260:300}
+                  width={bp==="mobile"?200:260}
                   T={T}
                 />
             }
