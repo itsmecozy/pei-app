@@ -351,7 +351,7 @@ export default function MapPage({ openModal }) {
           {loading ? (
             <Skeleton height={420} width={260} />
           ) : (
-            <div style={{ width:"100%", maxWidth:bp==="mobile"?260:340 }}>
+            <div style={{ width:"100%", maxWidth:bp==="mobile"?240:340, maxHeight: bp==="mobile"?"65vw":undefined }}>
               <PhilippinesMap
                 provinceAggs={provinceAggs}
                 lgus={lgus}
