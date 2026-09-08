@@ -1,75 +1,66 @@
 // PhilippinesMap.jsx
-// GeoJSON: ph-provinces.json in public/ folder
-// Replace with faeldon/philippines-json-maps for full 82-province coverage
+// Uses pre-generated SVG paths from PSGC 2023 data (83 provinces)
+// No runtime GeoJSON fetch — paths are bundled directly
+// Source: faeldon/philippines-json-maps via Lovable v2
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { EMOTION_MAP } from "../../constants/emotions";
-
-const GEOJSON_URL = "/ph-provinces.json";
+import { PROVINCE_SHAPES, MAP_WIDTH, MAP_HEIGHT } from "../../constants/phProvincePaths";
 
 function normalize(name) {
   return (name || "")
     .toLowerCase()
-    .replace("metropolitan manila", "metro manila")
-    .replace("mindoro occidental", "occidental mindoro")
-    .replace("mindoro oriental", "oriental mindoro")
     .replace(/[^a-z0-9 ]/g, "")
     .trim();
 }
 
-function project(lng, lat, W, H) {
-  const x = ((lng - 116.9) / (126.6 - 116.9)) * W;
-  const y = ((20.8 - lat)  / (20.8 - 4.6))    * H;
-  return [x, y];
-}
+// Project lng/lat to SVG coords using same equirectangular projection
+// Standard parallel 12N, matching how paths were generated
+function projectDot(lng, lat) {
+  const REF_LNG = 122.0; // center longitude
+  const REF_LAT = 12.0;  // standard parallel
+  const SCALE   = 111320; // meters per degree
 
-function ringToPath(ring, W, H) {
-  return ring.map(([lng, lat], i) => {
-    const [x, y] = project(lng, lat, W, H);
-    return `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
-  }).join(" ") + " Z";
-}
+  const x = ((lng - REF_LNG) * SCALE * Math.cos(REF_LAT * Math.PI / 180));
+  const y = -((lat - REF_LAT) * SCALE);
 
-function featureToPath(feature, W, H) {
-  const { type, coordinates } = feature.geometry;
-  if (type === "Polygon")
-    return coordinates.map(r => ringToPath(r, W, H)).join(" ");
-  if (type === "MultiPolygon")
-    return coordinates.map(poly => poly.map(r => ringToPath(r, W, H)).join(" ")).join(" ");
-  return "";
+  // Normalize to MAP_WIDTH x MAP_HEIGHT
+  // Philippines approx bounds after centering
+  const X_OFFSET = MAP_WIDTH  / 2;
+  const Y_OFFSET = MAP_HEIGHT * 0.38; // approx vertical center
+  const PIX_PER_M = MAP_WIDTH / 1100000; // approx 1100km wide
+
+  return [
+    X_OFFSET + x * PIX_PER_M,
+    Y_OFFSET + y * PIX_PER_M,
+  ];
 }
 
 export default function PhilippinesMap({
   provinceAggs = [],
-  lgus = [],
-  selected = null,
+  lgus         = [],
+  selected     = null,
   onSelectLgu,
   onSelectProvince,
-  width = 340,
+  width        = 340,
   T,
 }) {
-  const [features, setFeatures] = useState([]);
-  const [loading,  setLoading]  = useState(true);
-  const [error,    setError]    = useState(false);
-  const [hovered,  setHovered]  = useState(null);
+  const [hovered, setHovered] = useState(null);
 
   const W = width;
-  const H = Math.round(width * 1.72);
+  const H = Math.round(width * (MAP_HEIGHT / MAP_WIDTH)); // preserve aspect ratio
 
-  useEffect(() => {
-    fetch(GEOJSON_URL)
-      .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
-      .then(data => { setFeatures(data.features || []); setLoading(false); })
-      .catch(() => { setError(true); setLoading(false); });
-  }, []);
+  // Scale factor from MAP coords to our display size
+  const scaleX = W / MAP_WIDTH;
+  const scaleY = H / MAP_HEIGHT;
 
   // Build province name → aggregation data map
-  const provinceColorMap = {};
+  const provinceDataMap = {};
   for (const agg of provinceAggs) {
     const key = normalize(agg.provinces?.name || "");
     if (!key) continue;
     const em = EMOTION_MAP[agg.dominant_emotion];
-    provinceColorMap[key] = {
+    provinceDataMap[key] = {
       hex:      em?.hex || "#6b7280",
       dominant: agg.dominant_emotion,
       count:    agg.submission_count,
@@ -80,60 +71,52 @@ export default function PhilippinesMap({
     };
   }
 
-  function getProvinceData(feature) {
-    const key = normalize(feature.properties?.name || "");
-    if (provinceColorMap[key]) return provinceColorMap[key];
-    for (const [k, v] of Object.entries(provinceColorMap)) {
+  function getProvinceData(shape) {
+    const key = normalize(shape.name);
+    if (provinceDataMap[key]) return provinceDataMap[key];
+    // Partial match fallback
+    for (const [k, v] of Object.entries(provinceDataMap)) {
       if (key.includes(k) || k.includes(key)) return v;
     }
     return null;
   }
 
-  if (loading) return (
-    <div style={{ width:W, height:H*0.5, display:"flex", alignItems:"center",
-      justifyContent:"center", fontSize:"0.6rem", color:T.muted }}>
-      Loading map…
-    </div>
-  );
-
-  if (error) return (
-    <div style={{ width:W, padding:"1rem", textAlign:"center",
-      fontSize:"0.6rem", color:T.rose }}>
-      Map unavailable — ph-provinces.json missing from public/
-    </div>
-  );
+  // Scale a path's coordinates from MAP_WIDTH/MAP_HEIGHT to display size
+  function scalePath(d) {
+    return d.replace(/(-?\d+\.?\d*),(-?\d+\.?\d*)/g, (_, x, y) =>
+      `${(parseFloat(x) * scaleX).toFixed(1)},${(parseFloat(y) * scaleY).toFixed(1)}`
+    );
+  }
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`}
       style={{ width:"100%", maxWidth:W, display:"block" }}>
 
-      {/* Province fills — always clickable */}
-      {features.map((feature, i) => {
-        const pc     = getProvinceData(feature);
-        const name   = feature.properties?.name || "";
-        const pathD  = featureToPath(feature, W, H);
+      {/* Province fills */}
+      {PROVINCE_SHAPES.map((shape, i) => {
+        const pc     = getProvinceData(shape);
         const isHov  = hovered === i;
-        const fill   = pc?.hex || (T.surface || "#1a2535");
-        const op     = pc ? (isHov ? 0.85 : 0.55) : (isHov ? 0.18 : 0.08);
+        const fill   = pc?.hex || T.surface || "#1a2535";
+        const op     = pc
+          ? (isHov ? 0.85 : 0.55)
+          : (isHov ? 0.2  : 0.09);
 
         return (
-          <path key={i} d={pathD}
+          <path key={shape.code}
+            d={scalePath(shape.d)}
             fill={fill}
             fillOpacity={op}
-            stroke="rgba(255,255,255,0.12)"
+            stroke="rgba(255,255,255,0.13)"
             strokeWidth={0.4}
             style={{ cursor:"pointer", transition:"fill-opacity 0.15s" }}
             onMouseEnter={() => setHovered(i)}
             onMouseLeave={() => setHovered(null)}
             onClick={() => {
-              if (pc) {
-                onSelectProvince && onSelectProvince(pc);
-              } else {
-                // Province has no data yet — still pass name for display
-                onSelectProvince && onSelectProvince({ name, dominant: null, count: 0 });
-              }
+              onSelectProvince && onSelectProvince(
+                pc || { name: shape.name, dominant: null, count: 0 }
+              );
             }}>
-            <title>{name}{pc ? ` — ${pc.dominant}` : " — no data yet"}</title>
+            <title>{shape.name}{pc ? ` — ${pc.dominant}` : " — no data yet"}</title>
           </path>
         );
       })}
@@ -145,9 +128,12 @@ export default function PhilippinesMap({
         const lat   = a.lgus?.lat;
         const lng   = a.lgus?.lng;
         if (!lat || !lng) return null;
-        const [x, y] = project(lng, lat, W, H);
+        const [x, y] = projectDot(lng, lat);
+        if (x < 0 || x > W || y < 0 || y > H) return null;
+
         return (
-          <g key={a.id} onClick={() => onSelectLgu && onSelectLgu(a)}
+          <g key={a.id}
+            onClick={() => onSelectLgu && onSelectLgu(a)}
             style={{ cursor:"pointer" }}>
             <circle cx={x} cy={y} r={isSel ? 12 : 7}
               fill={em?.hex || T.amber} opacity={0.2} />
