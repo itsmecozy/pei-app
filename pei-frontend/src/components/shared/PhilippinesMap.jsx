@@ -90,7 +90,8 @@ export default function PhilippinesMap({
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`}
-      style={{ width:"100%", maxWidth:W, display:"block" }}>
+      width={W} height={H}
+      style={{ width:"100%", maxWidth:W, height:"auto", display:"block" }}>
 
       {/* Province fills */}
       {PROVINCE_SHAPES.map((shape, i) => {
