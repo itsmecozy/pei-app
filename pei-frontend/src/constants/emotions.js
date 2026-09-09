@@ -18,3 +18,12 @@ export const NEUTRAL         = ["calm"];
 export const DESPAIR_LEANING = ["grief", "anger", "anxiety", "regret", "longing"];
 
 export const EMOTION_MAP = Object.fromEntries(EMOTIONS.map(e => [e.key, e]));
+
+// Intensity labels — shown in submission modal step 3
+export const INTENSITIES = [
+  { value: 1, label: "Faint",        hint: "It's there, barely."     },
+  { value: 2, label: "Mild",         hint: "In the background."       },
+  { value: 3, label: "Present",      hint: "Clearly with me today."  },
+  { value: 4, label: "Strong",       hint: "Hard to set down."       },
+  { value: 5, label: "Overwhelming", hint: "It fills the whole day." },
+];
