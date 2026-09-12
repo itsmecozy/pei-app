@@ -228,7 +228,7 @@ export default function DashboardPage({ navigate }) {
               (emotionLeaders || DEMO_LEADERS)
                 ? EMOTIONS.map(em => {
                     // Find which province leads this emotion
-                    const entry = Object.values(emotionLeaders)
+                    const entry = Object.values(emotionLeaders || DEMO_LEADERS)
                       .find(v => v.emotionKey === em.key);
                     return (
                       <div key={em.key}
