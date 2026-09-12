@@ -117,7 +117,11 @@ export default function PhilippinesMap({
     }
   };
   const onTouchMove = (e) => {
-    e.preventDefault();
+    // Only block native scroll for pinch or when panning (zoomed in)
+    if (e.touches.length === 2 || zoom > 1) {
+      e.preventDefault();
+    }
+    if (e.touches.length === 1 && zoom === 1) return; // let page scroll
     didDrag.current = true;
     if (e.touches.length === 2 && lastTouch) {
       const dx = e.touches[0].clientX-e.touches[1].clientX;
@@ -180,7 +184,7 @@ export default function PhilippinesMap({
           background:T.surface,
           cursor: dragging ? "grabbing" : zoom>1 ? "grab" : "default",
           userSelect:"none",
-          touchAction:"none",
+          touchAction: zoom > 1 ? "none" : "pan-y",
           position:"relative",
         }}
         onWheel={readOnly ? undefined : onWheel}
