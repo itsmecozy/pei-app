@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { getNational, getLGUAggregations, getProvinceAggregations } from "../lib/supabase";
 import { useT } from "../context/ThemeContext";
 import { EMOTIONS, EMOTION_MAP } from "../constants/emotions";
@@ -18,7 +18,33 @@ export default function DashboardPage({ navigate }) {
   const [provinceAggs, setProvinceAggs] = useState([]);
   const [loading,      setLoading]      = useState(true);
   const [period,       setPeriod]       = useState("all");
-  const [hoveredInfo,  setHoveredInfo]  = useState(null); // { name, type, data }
+  const [hoveredInfo,  setHoveredInfo]  = useState(null);
+
+  // Compute top province per emotion for dashboard map
+  const emotionLeaders = useMemo(() => {
+    if (!provinceAggs.length) return null;
+    const normalize = (s) => (s||"").toLowerCase().replace(/[^a-z0-9 ]/g,"").trim();
+    const leaders = {};
+    for (const em of EMOTIONS) {
+      let best = null, bestPct = 0;
+      for (const agg of provinceAggs) {
+        const dist = agg.emotion_dist || {};
+        const pct  = dist[em.key] || 0;
+        if (pct > bestPct) { bestPct = pct; best = agg; }
+      }
+      if (best) {
+        const key = normalize(best.provinces?.name || "");
+        leaders[key] = {
+          hex:          em.hex,
+          emotion:      em.name,
+          emotionKey:   em.key,
+          pct:          Math.round(bestPct * 100),
+          provinceName: best.provinces?.name,
+        };
+      }
+    }
+    return Object.keys(leaders).length ? leaders : null;
+  }, [provinceAggs]);
 
   useEffect(() => {
     setLoading(true);
@@ -59,27 +85,22 @@ export default function DashboardPage({ navigate }) {
           subtitle="Philippine Emotional Index — aggregated from anonymous submissions across all cities and municipalities." />
       </div>
 
-      {/* Period selector — pill group */}
-      <div style={{ padding:bp==="mobile"?"0 1.25rem 1.25rem":"0 0 1.25rem" }}>
-        <div style={{ display:"inline-flex", gap:2, padding:3,
-          background:T.surface, border:`1px solid ${T.border}` }}>
-          {[
-            { key:"7d",  label:"7D"       },
-            { key:"30d", label:"30D"      },
-            { key:"90d", label:"90D"      },
-            { key:"all", label:"All time" },
-          ].map(t => (
-            <button key={t.key} onClick={() => setPeriod(t.key)}
-              style={{ padding:"4px 14px",
-                background:period===t.key?T.bg:"transparent",
-                color:period===t.key?T.text:T.muted,
-                border:`1px solid ${period===t.key?T.border:"transparent"}`,
-                fontSize:"0.72rem", fontWeight:period===t.key?500:400,
-                cursor:"pointer", transition:"all 0.15s" }}>
-              {t.label}
-            </button>
-          ))}
-        </div>
+      {/* Period selector */}
+      <div style={{ padding:bp==="mobile"?"0 1.25rem 1.25rem":"0 0 1.25rem",
+        display:"flex", gap:"0.25rem", flexWrap:"wrap" }}>
+        {["7d","30d","90d","all"].map(t => (
+          <button key={t} onClick={() => setPeriod(t)}
+            style={{ padding:"0.28rem 0.65rem", fontFamily:"DM Mono", fontSize:"0.56rem",
+              letterSpacing:"0.06em", border:`1px solid ${period===t?T.amber:T.border}`,
+              background:period===t?`${T.amber}15`:"none",
+              color:period===t?T.amber:T.muted, cursor:"pointer", transition:"all 0.2s" }}>
+            {t === "all" ? "ALL TIME" : t.toUpperCase()}
+          </button>
+        ))}
+        <span style={{ fontFamily:"DM Mono", fontSize:"0.5rem", color:T.muted,
+          display:"flex", alignItems:"center", paddingLeft:"0.25rem" }}>
+          {PERIOD_LABELS[period]}
+        </span>
       </div>
 
       {/* Metric cards */}
@@ -146,130 +167,80 @@ export default function DashboardPage({ navigate }) {
         </div>
       )}
 
-      {/* Philippine Map section */}
-      <div style={{ marginTop:"1.5rem", border:`1px solid ${T.border}` }}>
-        <div style={{ padding:"0.85rem 1.1rem", borderBottom:`1px solid ${T.border}`,
-          display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-          <div style={{ fontFamily:"DM Mono", fontSize:"0.5rem", letterSpacing:"0.14em",
-            textTransform:"uppercase", color:T.muted }}>
-            Emotional Heatmap · {PERIOD_LABELS[period]}
+      {/* Emotion champions map */}
+      <div style={{ marginTop:"1.5rem" }}>
+        <div style={{ display:"flex", justifyContent:"space-between",
+          alignItems:"center", marginBottom:"0.75rem" }}>
+          <div>
+            <p style={{ fontSize:"0.55rem", letterSpacing:"0.14em",
+              textTransform:"uppercase", color:T.muted, marginBottom:2 }}>
+              Emotional Geography
+            </p>
+            <p style={{ fontSize:"0.7rem", color:T.muted, lineHeight:1.5 }}>
+              Top province for each emotion · {PERIOD_LABELS[period]}
+            </p>
           </div>
           <button onClick={() => navigate("map")}
             style={{ background:"none", border:`1px solid ${T.border}`, color:T.muted,
-              fontFamily:"DM Mono", fontSize:"0.5rem", letterSpacing:"0.06em",
+              fontSize:"0.55rem", letterSpacing:"0.06em",
               padding:"0.25rem 0.6rem", cursor:"pointer" }}>
-            Full Map →
+            Full map →
           </button>
         </div>
 
-        <div style={{ display:"flex", flexDirection:bp==="mobile"?"column":"row" }}>
-          {/* Map */}
-          <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center",
-            padding:"1.5rem",
-            borderRight:bp!=="mobile"?`1px solid ${T.border}`:"none",
-            borderBottom:bp==="mobile"?`1px solid ${T.border}`:"none" }}>
+        <div style={{ display:"grid",
+          gridTemplateColumns:bp==="mobile"?"1fr":"1fr 1fr",
+          gap:"1.5rem", alignItems:"start" }}>
+
+          {/* Read-only highlights map */}
+          <div>
             {loading
-              ? <Skeleton height={380} width={220} />
+              ? <Skeleton height={300} width="100%" />
               : <PhilippinesMap
                   provinceAggs={provinceAggs}
-                  lgus={lgus}
-                  selected={hoveredInfo?.type === "lgu" ? hoveredInfo.data : null}
-                  onSelectLgu={lgu => setHoveredInfo({ name:lgu.lgus?.name, type:"lgu", data:lgu })}
-                  onSelectProvince={pc => setHoveredInfo({ name:pc.name, type:"province", data:pc })}
-                  width={bp==="mobile"?200:260}
+                  lgus={[]}
+                  highlights={emotionLeaders}
+                  readOnly={true}
+                  width={300}
                   T={T}
                 />
             }
           </div>
 
-          {/* Info panel */}
-          <div style={{ width:bp==="mobile"?"100%":210, padding:"1.1rem",
-            display:"flex", flexDirection:"column", gap:"0.6rem", flexShrink:0 }}>
-            {hoveredInfo ? (
-              <>
-                <div style={{ fontFamily:"'Playfair Display',serif",
-                  fontSize:"0.95rem", fontWeight:700, lineHeight:1.2 }}>
-                  {hoveredInfo.name}
-                </div>
-                <div style={{ fontFamily:"DM Mono", fontSize:"0.5rem", color:T.muted }}>
-                  {hoveredInfo.type === "province" ? "Province" : "City / Municipality"} ·{" "}
-                  {(hoveredInfo.data.submission_count || hoveredInfo.data.count || 0).toLocaleString()} submissions
-                </div>
-                {(() => {
-                  const dominant = hoveredInfo.data.dominant_emotion || hoveredInfo.data.dominant;
-                  const em = EMOTION_MAP[dominant];
-                  const dist = hoveredInfo.data.emotion_dist || hoveredInfo.data.dist || {};
-                  const entries = Object.entries(dist)
-                    .map(([k,v]) => ({ ...EMOTION_MAP[k], key:k, pct:Math.round(v*100) }))
-                    .sort((a,b) => b.pct - a.pct).slice(0,5);
-                  return (
-                    <>
-                      {em && (
-                        <div style={{ display:"flex", alignItems:"center", gap:"0.4rem",
-                          background:`${em.hex}12`, border:`1px solid ${em.hex}25`,
-                          padding:"0.4rem 0.5rem" }}>
-                          <EmotionIcon icon={em.icon} color={em.hex} size={12} />
-                          <span style={{ fontFamily:"DM Mono", fontSize:"0.5rem",
-                            color:em.hex, textTransform:"capitalize" }}>
-                            {dominant} · {Math.round((dist[dominant]||0)*100)}%
+          {/* Emotion leaders legend */}
+          <div style={{ display:"flex", flexDirection:"column", gap:"0.5rem" }}>
+            {loading ? <Skeleton height={200} width="100%" /> :
+              emotionLeaders
+                ? EMOTIONS.map(em => {
+                    // Find which province leads this emotion
+                    const entry = Object.values(emotionLeaders)
+                      .find(v => v.emotionKey === em.key);
+                    return (
+                      <div key={em.key}
+                        style={{ display:"flex", alignItems:"center", gap:"0.6rem",
+                          padding:"0.45rem 0",
+                          borderBottom:`1px solid ${T.border}` }}>
+                        <div style={{ width:8, height:8, borderRadius:"50%",
+                          background:em.hex, flexShrink:0 }} />
+                        <span style={{ fontSize:"0.7rem", fontWeight:500,
+                          color:T.text, width:100, flexShrink:0,
+                          textTransform:"capitalize" }}>{em.name}</span>
+                        <span style={{ fontSize:"0.65rem", color:T.muted, flex:1 }}>
+                          {entry ? entry.provinceName : "—"}
+                        </span>
+                        {entry && (
+                          <span style={{ fontSize:"0.55rem", color:em.hex,
+                            fontVariantNumeric:"tabular-nums", flexShrink:0 }}>
+                            {entry.pct}%
                           </span>
-                        </div>
-                      )}
-                      <div style={{ fontFamily:"DM Mono", fontSize:"0.5rem", display:"flex", gap:"0.5rem" }}>
-                        <span style={{ color:esiColor(hoveredInfo.data.esi) }}>
-                          ESI {hoveredInfo.data.esi}
-                        </span>
-                        <span style={{ color:T.muted }}>·</span>
-                        <span style={{ color:hoveredInfo.data.hdr>1?T.teal:T.rose }}>
-                          HDR {hoveredInfo.data.hdr}
-                        </span>
+                        )}
                       </div>
-                      <div style={{ display:"flex", flexDirection:"column", gap:"0.3rem" }}>
-                        {entries.map((e,i) => (
-                          <div key={e.key} style={{ display:"flex", alignItems:"center", gap:"0.4rem" }}>
-                            <div style={{ flex:1, height:2, background:T.border, position:"relative" }}>
-                              <div style={{ position:"absolute", left:0, top:0, height:"100%",
-                                width:`${e.pct}%`, background:e.hex||T.muted,
-                                transition:`width 0.5s ${i*0.04}s` }} />
-                            </div>
-                            <span style={{ fontFamily:"DM Mono", fontSize:"0.46rem",
-                              color:e.hex||T.muted, width:24, textAlign:"right" }}>{e.pct}%</span>
-                          </div>
-                        ))}
-                      </div>
-                    </>
-                  );
-                })()}
-                <button onClick={() => setHoveredInfo(null)}
-                  style={{ background:"none", border:`1px solid ${T.border}`, color:T.muted,
-                    fontFamily:"DM Mono", fontSize:"0.48rem", padding:"0.2rem 0.5rem",
-                    cursor:"pointer", alignSelf:"flex-start", marginTop:"0.25rem" }}>
-                  ← Back to legend
-                </button>
-              </>
-            ) : (
-              <>
-                <div style={{ fontFamily:"DM Mono", fontSize:"0.48rem",
-                  color:T.muted, marginBottom:"0.15rem" }}>
-                  Emotion Legend
-                </div>
-                {EMOTIONS.map(em => (
-                  <div key={em.key} style={{ display:"flex", alignItems:"center", gap:"0.45rem" }}>
-                    <div style={{ width:7, height:7, borderRadius:"50%",
-                      background:em.hex, flexShrink:0 }} />
-                    <EmotionIcon icon={em.icon} color={em.hex} size={10} />
-                    <span style={{ fontFamily:"DM Mono", fontSize:"0.48rem",
-                      color:T.muted, textTransform:"capitalize" }}>{em.name}</span>
-                  </div>
-                ))}
-                <div style={{ marginTop:"0.35rem", fontFamily:"DM Mono", fontSize:"0.46rem",
-                  color:T.muted, borderTop:`1px solid ${T.border}`, paddingTop:"0.4rem" }}>
-                  {provinceAggs.filter(p=>p.meets_threshold).length} provinces ·{" "}
-                  {lgus.length} active LGUs
-                  <br/>Click a province or city to explore
-                </div>
-              </>
-            )}
+                    );
+                  })
+                : <p style={{ fontSize:"0.7rem", color:T.muted, lineHeight:1.6 }}>
+                    No province data yet. Submit feelings to see the map come alive.
+                  </p>
+            }
           </div>
         </div>
       </div>
