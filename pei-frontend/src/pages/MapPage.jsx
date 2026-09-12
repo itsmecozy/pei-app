@@ -358,14 +358,6 @@ export default function MapPage({ openModal }) {
         )}
       </div>
 
-      {/* Caption — below map, never overlapping */}
-      <p style={{ fontSize:"0.55rem", color:T.muted, marginTop:"0.5rem",
-        padding:bp==="mobile"?"0 1.25rem":"0" }}>
-        {lgus.length > 0
-          ? `${provinceAggs.filter(p=>p.meets_threshold).length} provinces · ${lgus.length} active LGUs · click a province to explore`
-          : "Provinces and cities appear once they reach the submission threshold"
-        }
-      </p>
 
       {/* ── Province table ────────────────────────────────────────────────── */}
       <div style={{ padding:pad, marginBottom:"2.5rem" }}>
