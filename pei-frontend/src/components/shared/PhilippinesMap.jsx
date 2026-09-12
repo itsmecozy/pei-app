@@ -33,6 +33,8 @@ export default function PhilippinesMap({
   onSelectLgu,
   onSelectProvince,
   width        = 340,
+  highlights   = null,  // { [normalizedProvinceName]: { hex, emotion, pct, provinceName } }
+  readOnly     = false, // when true: no click, no zoom, no popup
   T,
 }) {
   const [zoom,      setZoom]     = useState(1);
@@ -41,6 +43,9 @@ export default function PhilippinesMap({
   const [lastPan,   setLastPan]  = useState({ x:0, y:0 });
   const [lastTouch, setLastTouch]= useState(null);
   const [popup,     setPopup]    = useState(null);
+
+  // highlights mode: precompute lookup
+  const hlMap = highlights || null;
 
   const containerRef = useRef(null);
   const didDrag      = useRef(false);
@@ -178,15 +183,15 @@ export default function PhilippinesMap({
           touchAction:"none",
           position:"relative",
         }}
-        onWheel={onWheel}
-        onMouseDown={onMouseDown}
-        onMouseMove={onMouseMove}
-        onMouseUp={onMouseUp}
-        onMouseLeave={onMouseUp}
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
-        onClick={() => { if (!didDrag.current) setPopup(null); }}
+        onWheel={readOnly ? undefined : onWheel}
+        onMouseDown={readOnly ? undefined : onMouseDown}
+        onMouseMove={readOnly ? undefined : onMouseMove}
+        onMouseUp={readOnly ? undefined : onMouseUp}
+        onMouseLeave={readOnly ? undefined : onMouseUp}
+        onTouchStart={readOnly ? undefined : onTouchStart}
+        onTouchMove={readOnly ? undefined : onTouchMove}
+        onTouchEnd={readOnly ? undefined : onTouchEnd}
+        onClick={readOnly ? undefined : () => { if (!didDrag.current) setPopup(null); }}
       >
         <svg
           viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`}
@@ -198,22 +203,39 @@ export default function PhilippinesMap({
 
             {/* Province fills */}
             {PROVINCE_SHAPES.map(shape => {
+              const key      = normalize(shape.name);
+              const hl       = hlMap ? hlMap[key] : null;
               const pc       = getPC(shape);
               const isActive = popup?.shape?.code === shape.code;
-              const fill     = pc?.hex || "#ffffff";
-              const op       = pc
-                ? (isActive ? 1 : 0.6)
-                : (isActive ? 0.45 : 0.18); // lighter base for no-data provinces
+
+              // Highlights mode: show emotion champions
+              const fill = hlMap
+                ? (hl ? hl.hex : "#ffffff")
+                : (pc?.hex || "#ffffff");
+              const op = hlMap
+                ? (hl ? 0.75 : 0.08)
+                : pc
+                  ? (isActive ? 1 : 0.6)
+                  : (isActive ? 0.45 : 0.18);
 
               return (
                 <path key={shape.code} d={shape.d}
                   fill={fill}
                   fillOpacity={op}
-                  stroke={isActive ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.35)"}
-                  strokeWidth={isActive ? 3/zoom : 0.8/zoom}
-                  style={{ cursor:"pointer", transition:"fill-opacity 0.15s" }}
-                  onClick={(e) => handleProvinceClick(e, shape, pc)}>
-                  <title>{shape.name}</title>
+                  stroke={hlMap
+                    ? (hl ? "rgba(255,255,255,0.6)" : "rgba(255,255,255,0.12)")
+                    : (isActive ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.35)")
+                  }
+                  strokeWidth={hlMap
+                    ? (hl ? 1.5 : 0.5)
+                    : (isActive ? 3/zoom : 0.8/zoom)
+                  }
+                  style={{
+                    cursor: readOnly ? "default" : "pointer",
+                    transition:"fill-opacity 0.15s"
+                  }}
+                  onClick={readOnly ? undefined : (e) => handleProvinceClick(e, shape, pc)}>
+                  <title>{shape.name}{hl ? ` — ${hl.emotion}` : ""}</title>
                 </path>
               );
             })}
@@ -241,8 +263,8 @@ export default function PhilippinesMap({
           </g>
         </svg>
 
-        {/* Province popup — always in opposite quadrant from click */}
-        {popup && (
+        {/* Province popup — hidden in readOnly mode */}
+        {!readOnly && popup && (
           <div style={{
             position:"absolute",
             left: popup.x,
@@ -325,8 +347,8 @@ export default function PhilippinesMap({
           </div>
         )}
 
-        {/* Zoom controls */}
-        <div style={{ position:"absolute", bottom:8, right:8,
+        {/* Zoom controls — hidden in readOnly mode */}
+        {!readOnly && <div style={{ position:"absolute", bottom:8, right:8,
           display:"flex", flexDirection:"column", gap:4 }}>
           {[
             { label:"+", fn: () => zoomAt(zoom*1.3, 100, 100) },
@@ -342,9 +364,9 @@ export default function PhilippinesMap({
               {b.label}
             </button>
           ))}
-        </div>
+        </div>}
 
-        {zoom > 1 && (
+        {!readOnly && zoom > 1 && (
           <div style={{ position:"absolute", bottom:8, left:8,
             fontSize:"0.46rem", color:T.muted }}>
             {Math.round(zoom*100)}%
