@@ -8,6 +8,21 @@ import { PageHeader, Skeleton, EmptyState } from "../components/shared/ui/index"
 import EmotionIcon from "../components/shared/EmotionIcon";
 import PhilippinesMap from "../components/shared/PhilippinesMap";
 
+// Demo data — shown when no real province data exists yet
+// Province names must match normalized keys in phProvincePaths.js
+const DEMO_LEADERS = {
+  "cebu":           { hex:"#10B981", emotion:"Hope",          emotionKey:"hope",          pct:28, provinceName:"Cebu"           },
+  "laguna":         { hex:"#34D399", emotion:"Relief",         emotionKey:"relief",         pct:24, provinceName:"Laguna"         },
+  "davao del sur":  { hex:"#60A5FA", emotion:"Determination",  emotionKey:"determination",  pct:31, provinceName:"Davao del Sur"  },
+  "benguet":        { hex:"#94A3B8", emotion:"Calm",           emotionKey:"calm",           pct:19, provinceName:"Benguet"        },
+  "ilocos norte":   { hex:"#A78BFA", emotion:"Longing",        emotionKey:"longing",        pct:22, provinceName:"Ilocos Norte"   },
+  "pampanga":       { hex:"#F472B6", emotion:"Regret",         emotionKey:"regret",         pct:17, provinceName:"Pampanga"       },
+  "leyte":          { hex:"#FB923C", emotion:"Anxiety",        emotionKey:"anxiety",        pct:20, provinceName:"Leyte"          },
+  "lanao del sur":  { hex:"#F87171", emotion:"Anger",          emotionKey:"anger",          pct:15, provinceName:"Lanao del Sur"  },
+  "bukidnon":       { hex:"#818CF8", emotion:"Grief",          emotionKey:"grief",          pct:13, provinceName:"Bukidnon"       },
+};
+
+
 export default function DashboardPage({ navigate }) {
   const T   = useT();
   const bp  = useBreakpoint();
@@ -199,7 +214,7 @@ export default function DashboardPage({ navigate }) {
               : <PhilippinesMap
                   provinceAggs={provinceAggs}
                   lgus={[]}
-                  highlights={emotionLeaders}
+                  highlights={emotionLeaders || DEMO_LEADERS}
                   readOnly={true}
                   width={300}
                   T={T}
@@ -210,7 +225,7 @@ export default function DashboardPage({ navigate }) {
           {/* Emotion leaders legend */}
           <div style={{ display:"flex", flexDirection:"column", gap:"0.5rem" }}>
             {loading ? <Skeleton height={200} width="100%" /> :
-              emotionLeaders
+              (emotionLeaders || DEMO_LEADERS)
                 ? EMOTIONS.map(em => {
                     // Find which province leads this emotion
                     const entry = Object.values(emotionLeaders)
