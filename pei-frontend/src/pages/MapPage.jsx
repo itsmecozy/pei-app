@@ -262,7 +262,6 @@ export default function MapPage({ openModal }) {
   const [period,       setPeriod]      = useState("all");
   const [selectedLgu,  setSelectedLgu] = useState(null);
   const [selectedProv, setSelectedProv] = useState(null);
-  const [sidebarOpen,  setSidebarOpen] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -278,13 +277,11 @@ export default function MapPage({ openModal }) {
   const handleLguSelect = (lgu) => {
     setSelectedLgu(lgu);
     setSelectedProv(null);
-    if (bp !== "desktop") setSidebarOpen(true);
   };
 
   const handleProvSelect = (pc) => {
     setSelectedProv(pc);
     setSelectedLgu(null);
-    if (bp !== "desktop") setSidebarOpen(true);
   };
 
   const pad = bp === "mobile" ? "0 1.25rem" : "0";
@@ -321,21 +318,7 @@ export default function MapPage({ openModal }) {
         </div>
       </div>
 
-      {/* Mobile sidebar overlay */}
-      {bp !== "desktop" && sidebarOpen && (
-        <div style={{ position:"fixed", inset:0, top:NAV_H, zIndex:210,
-          background:"rgba(0,0,0,0.7)", backdropFilter:"blur(4px)" }}
-          onClick={() => setSidebarOpen(false)}>
-          <div style={{ position:"absolute", right:0, top:0, bottom:0,
-            width:"min(380px,92vw)", background:T.surface,
-            borderLeft:`1px solid ${T.border}`, overflowY:"auto" }}
-            onClick={e => e.stopPropagation()}>
-            <SidebarContent selected={selectedLgu} selectedProvince={selectedProv}
-              inView={inView} period={period}
-              onClose={() => setSidebarOpen(false)} bp={bp} T={T} />
-          </div>
-        </div>
-      )}
+
 
       {/* ── Map + desktop sidebar ─────────────────────────────────────────── */}
       <div ref={ref} style={{ display:bp==="desktop"?"grid":"block",
@@ -361,13 +344,7 @@ export default function MapPage({ openModal }) {
                 width={bp==="mobile"?220:300}
                 T={T}
               />
-              <p style={{ fontSize:"0.55rem", color:T.muted,
-                textAlign:"center", marginTop:6 }}>
-                {lgus.length > 0
-                  ? `${provinceAggs.filter(p=>p.meets_threshold).length} provinces · ${lgus.length} active ${lgus.length===1?"LGU":"LGUs"} · click to explore`
-                  : "Provinces and cities appear once they reach the submission threshold"
-                }
-              </p>
+
             </div>
           )}
         </div>
@@ -380,6 +357,15 @@ export default function MapPage({ openModal }) {
           </div>
         )}
       </div>
+
+      {/* Caption — below map, never overlapping */}
+      <p style={{ fontSize:"0.55rem", color:T.muted, marginTop:"0.5rem",
+        padding:bp==="mobile"?"0 1.25rem":"0" }}>
+        {lgus.length > 0
+          ? `${provinceAggs.filter(p=>p.meets_threshold).length} provinces · ${lgus.length} active LGUs · click a province to explore`
+          : "Provinces and cities appear once they reach the submission threshold"
+        }
+      </p>
 
       {/* ── Province table ────────────────────────────────────────────────── */}
       <div style={{ padding:pad, marginBottom:"2.5rem" }}>
