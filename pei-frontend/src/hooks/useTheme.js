@@ -21,8 +21,8 @@ export const THEMES = {
   },
   light: {
     id:      "light",
-    label:   "White",
-    desc:    "Pure white. Clean and minimal.",
+    label:   "Light",
+    desc:    "Clean white. For daytime reading.",
     preview: ["#ffffff", "#f4f4f5", "#b45309"],
     tokens: {
       bg:       "#ffffff",
