@@ -106,10 +106,10 @@ export default function App() {
 
   return (
     <ThemeContext.Provider value={T}>
-      <div style={{ background:T.bg, color:T.text, minHeight:"100vh", fontFamily:"DM Mono,monospace" }}>
+      <div style={{ background:T.bg, color:T.text, minHeight:"100vh" }}>
         <GrainOverlay />
         <style>{`
-          @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Mono:wght@300;400;500&display=swap');
+          
           *{box-sizing:border-box;margin:0;padding:0}
           body{background:${T.bg};color:${T.text};transition:background 0.3s,color 0.3s}
           ::-webkit-scrollbar{width:4px}
