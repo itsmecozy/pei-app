@@ -180,7 +180,7 @@ export default function PhilippinesMap({
           background:T.surface,
           cursor: dragging ? "grabbing" : zoom>1 ? "grab" : "default",
           userSelect:"none",
-          touchAction:"none",
+          touchAction: readOnly ? "auto" : "none",
           position:"relative",
         }}
         onWheel={readOnly ? undefined : onWheel}
