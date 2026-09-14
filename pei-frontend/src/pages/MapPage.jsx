@@ -53,7 +53,7 @@ function ProvinceTable({ rows, T }) {
   const reported = rows.filter(r => r.meets_threshold);
 
   if (reported.length === 0) return (
-    <p style={{ fontSize:"0.8rem", color:T.muted, lineHeight:1.6 }}>
+    <p style={{ fontSize:"0.95rem", color:T.muted, lineHeight:1.6 }}>
       No province has reached the minimum threshold in this window yet.
       Provinces appear here the moment they do.
     </p>
@@ -63,7 +63,7 @@ function ProvinceTable({ rows, T }) {
     <div style={{ overflowX:"auto" }}>
       <table style={{ width:"100%", minWidth:480, borderCollapse:"collapse", textAlign:"left" }}>
         <thead>
-          <tr style={{ fontSize:"0.6rem", letterSpacing:"0.16em", textTransform:"uppercase",
+          <tr style={{ fontSize:"0.95rem", letterSpacing:"0.16em", textTransform:"uppercase",
             color:T.muted, fontVariantNumeric:"tabular-nums" }}>
             {["Province","Dominant","Balance","Diversity","Readings"].map((h,i) => (
               <th key={h} style={{ paddingBottom:"0.75rem", fontWeight:400,
@@ -115,7 +115,7 @@ function ProvinceTable({ rows, T }) {
 // ── City cards ────────────────────────────────────────────────────────────────
 function CityCards({ rows, T, onSelect, selected }) {
   if (rows.length === 0) return (
-    <p style={{ fontSize:"0.8rem", color:T.muted, lineHeight:1.6 }}>
+    <p style={{ fontSize:"0.95rem", color:T.muted, lineHeight:1.6 }}>
       Cities and municipalities appear once they reach the minimum threshold.
       That protects small towns from being characterised by one voice.
     </p>
@@ -140,15 +140,15 @@ function CityCards({ rows, T, onSelect, selected }) {
               lineHeight:1.1, marginBottom:"0.2rem" }}>
               {a.lgus?.name}
             </p>
-            <p style={{ fontSize:"0.65rem", color:T.muted, marginBottom:"0.75rem" }}>
+            <p style={{ fontSize:"1rem", color:T.muted, marginBottom:"0.75rem" }}>
               {a.lgus?.provinces?.name}
             </p>
             <p style={{ display:"flex", alignItems:"center", gap:6,
-              fontSize:"0.8rem", color:T.text, marginBottom:"0.3rem" }}>
+              fontSize:"0.95rem", color:T.text, marginBottom:"0.3rem" }}>
               <Dot dominant={dominant} />
               {em?.name || dominant || "—"}
             </p>
-            <p style={{ fontSize:"0.65rem", color:T.muted,
+            <p style={{ fontSize:"1rem", color:T.muted,
               fontVariantNumeric:"tabular-nums" }}>
               balance {formatBalance(a.hdr)} · {(a.submission_count||0).toLocaleString()} readings
             </p>
@@ -186,7 +186,7 @@ function SidebarContent({ selected, selectedProvince, inView, period, onClose, b
           <div>
             <p style={{ fontSize:"1.1rem", fontWeight:700, lineHeight:1.2,
               marginBottom:"0.2rem" }}>{name}</p>
-            <p style={{ fontSize:"0.6rem", color:T.muted }}>
+            <p style={{ fontSize:"0.95rem", color:T.muted }}>
               {isLgu
                 ? `${data.lgus?.provinces?.name || ""} · ${data.lgus?.lgu_type || "LGU"}`
                 : "Province"
@@ -196,7 +196,7 @@ function SidebarContent({ selected, selectedProvince, inView, period, onClose, b
           {bp !== "desktop" && (
             <button onClick={onClose}
               style={{ background:"none", border:`1px solid ${T.border}`, color:T.muted,
-                padding:"0.2rem 0.45rem", fontSize:"0.6rem", cursor:"pointer",
+                padding:"0.2rem 0.45rem", fontSize:"0.95rem", cursor:"pointer",
                 flexShrink:0, marginLeft:"0.5rem" }}>✕</button>
           )}
         </div>
@@ -206,7 +206,7 @@ function SidebarContent({ selected, selectedProvince, inView, period, onClose, b
             background:`${em.hex}10`, border:`1px solid ${em.hex}25`,
             padding:"0.45rem 0.6rem", marginBottom:"0.75rem" }}>
             <EmotionIcon icon={em.icon} color={em.hex} size={12} />
-            <span style={{ fontSize:"0.6rem", color:em.hex, textTransform:"capitalize" }}>
+            <span style={{ fontSize:"0.95rem", color:em.hex, textTransform:"capitalize" }}>
               {dominant} · {Math.round((dist[dominant]||0)*100)}%
             </span>
           </div>
@@ -310,7 +310,7 @@ export default function MapPage({ openModal }) {
                 background:period===t.key?T.bg:"transparent",
                 color:period===t.key?T.text:T.muted,
                 border:`1px solid ${period===t.key?T.border:"transparent"}`,
-                fontSize:"0.72rem", fontWeight:period===t.key?500:400,
+                fontSize:"0.9rem", fontWeight:period===t.key?500:400,
                 cursor:"pointer", transition:"all 0.15s" }}>
               {t.label}
             </button>
@@ -362,11 +362,11 @@ export default function MapPage({ openModal }) {
       {/* ── Province table ────────────────────────────────────────────────── */}
       <div style={{ padding:pad, marginBottom:"2.5rem" }}>
         <div style={{ marginBottom:"1rem" }}>
-          <p style={{ fontSize:"0.6rem", letterSpacing:"0.14em",
+          <p style={{ fontSize:"0.95rem", letterSpacing:"0.14em",
             textTransform:"uppercase", color:T.muted, marginBottom:4 }}>
             Across the provinces
           </p>
-          <p style={{ fontSize:"0.8rem", color:T.muted, lineHeight:1.6, maxWidth:480 }}>
+          <p style={{ fontSize:"0.95rem", color:T.muted, lineHeight:1.6, maxWidth:480 }}>
             A province appears once it has enough readings in the selected window.
           </p>
         </div>
@@ -379,11 +379,11 @@ export default function MapPage({ openModal }) {
       {/* ── City cards ────────────────────────────────────────────────────── */}
       <div style={{ padding:pad }}>
         <div style={{ marginBottom:"1rem" }}>
-          <p style={{ fontSize:"0.6rem", letterSpacing:"0.14em",
+          <p style={{ fontSize:"0.95rem", letterSpacing:"0.14em",
             textTransform:"uppercase", color:T.muted, marginBottom:4 }}>
             Cities and towns
           </p>
-          <p style={{ fontSize:"0.8rem", color:T.muted, lineHeight:1.6, maxWidth:480 }}>
+          <p style={{ fontSize:"0.95rem", color:T.muted, lineHeight:1.6, maxWidth:480 }}>
             Ordered by total readings. Click any card to highlight on the map above.
           </p>
         </div>

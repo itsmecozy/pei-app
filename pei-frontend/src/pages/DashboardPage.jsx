@@ -105,14 +105,14 @@ export default function DashboardPage({ navigate }) {
         display:"flex", gap:"0.25rem", flexWrap:"wrap" }}>
         {["7d","30d","90d","all"].map(t => (
           <button key={t} onClick={() => setPeriod(t)}
-            style={{ padding:"0.28rem 0.65rem", fontFamily:"DM Mono", fontSize:"0.56rem",
+            style={{ padding:"0.28rem 0.65rem", fontFamily:"DM Mono", fontSize:"0.92rem",
               letterSpacing:"0.06em", border:`1px solid ${period===t?T.amber:T.border}`,
               background:period===t?`${T.amber}15`:"none",
               color:period===t?T.amber:T.muted, cursor:"pointer", transition:"all 0.2s" }}>
             {t === "all" ? "ALL TIME" : t.toUpperCase()}
           </button>
         ))}
-        <span style={{ fontFamily:"DM Mono", fontSize:"0.5rem", color:T.muted,
+        <span style={{ fontFamily:"DM Mono", fontSize:"0.68rem", color:T.muted,
           display:"flex", alignItems:"center", paddingLeft:"0.25rem" }}>
           {PERIOD_LABELS[period]}
         </span>
@@ -141,7 +141,7 @@ export default function DashboardPage({ navigate }) {
             borderBottom:`1px solid ${T.border}`,
             opacity:inView?1:0, transform:inView?"none":"translateY(12px)",
             transition:`all 0.5s ${i*0.08}s` }}>
-            <div style={{ fontFamily:"DM Mono", fontSize:"0.52rem", letterSpacing:"0.14em",
+            <div style={{ fontFamily:"DM Mono", fontSize:"0.88rem", letterSpacing:"0.14em",
               textTransform:"uppercase", color:T.muted, marginBottom:"0.5rem" }}>{m.label}</div>
             {loading
               ? <Skeleton height={32} width={80} />
@@ -151,7 +151,7 @@ export default function DashboardPage({ navigate }) {
                   {m.value ?? "—"}
                 </div>
             }
-            <div style={{ fontFamily:"DM Mono", fontSize:"0.52rem",
+            <div style={{ fontFamily:"DM Mono", fontSize:"0.88rem",
               color:T.muted, marginTop:"0.3rem" }}>{m.desc}</div>
           </div>
         ))}
@@ -160,7 +160,7 @@ export default function DashboardPage({ navigate }) {
       {/* Emotion distribution pulse bar */}
       {!loading && distEntries.length > 0 && (
         <div style={{ padding:bp==="mobile"?"1.25rem 1.25rem 0":"1.25rem 0 0" }}>
-          <div style={{ fontFamily:"DM Mono", fontSize:"0.5rem", letterSpacing:"0.14em",
+          <div style={{ fontFamily:"DM Mono", fontSize:"0.68rem", letterSpacing:"0.14em",
             textTransform:"uppercase", color:T.muted, marginBottom:"0.5rem" }}>
             National Emotion Distribution · {PERIOD_LABELS[period]}
           </div>
@@ -174,7 +174,7 @@ export default function DashboardPage({ navigate }) {
             {distEntries.map(e => (
               <div key={e.key} style={{ display:"flex", alignItems:"center", gap:"0.3rem" }}>
                 <div style={{ width:6, height:6, borderRadius:"50%", background:e.hex }} />
-                <span style={{ fontFamily:"DM Mono", fontSize:"0.48rem",
+                <span style={{ fontFamily:"DM Mono", fontSize:"1rem",
                   color:T.muted, textTransform:"capitalize" }}>{e.name} {e.pct}%</span>
               </div>
             ))}
@@ -191,7 +191,7 @@ export default function DashboardPage({ navigate }) {
               textTransform:"uppercase", color:T.muted, marginBottom:2 }}>
               Emotional Geography
             </p>
-            <p style={{ fontSize:"0.7rem", color:T.muted, lineHeight:1.5 }}>
+            <p style={{ fontSize:"0.88rem", color:T.muted, lineHeight:1.5 }}>
               Top province for each emotion · {PERIOD_LABELS[period]}
             </p>
           </div>
@@ -237,10 +237,10 @@ export default function DashboardPage({ navigate }) {
                           borderBottom:`1px solid ${T.border}` }}>
                         <div style={{ width:8, height:8, borderRadius:"50%",
                           background:em.hex, flexShrink:0 }} />
-                        <span style={{ fontSize:"0.7rem", fontWeight:500,
+                        <span style={{ fontSize:"0.88rem", fontWeight:500,
                           color:T.text, width:100, flexShrink:0,
                           textTransform:"capitalize" }}>{em.name}</span>
-                        <span style={{ fontSize:"0.65rem", color:T.muted, flex:1 }}>
+                        <span style={{ fontSize:"1rem", color:T.muted, flex:1 }}>
                           {entry ? entry.provinceName : "—"}
                         </span>
                         {entry && (
@@ -252,7 +252,7 @@ export default function DashboardPage({ navigate }) {
                       </div>
                     );
                   })
-                : <p style={{ fontSize:"0.7rem", color:T.muted, lineHeight:1.6 }}>
+                : <p style={{ fontSize:"0.88rem", color:T.muted, lineHeight:1.6 }}>
                     No province data yet. Submit feelings to see the map come alive.
                   </p>
             }
