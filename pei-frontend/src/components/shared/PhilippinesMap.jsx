@@ -223,8 +223,10 @@ export default function PhilippinesMap({
                   fill={fill}
                   fillOpacity={op}
                   stroke={hlMap
-                    ? (hl ? "rgba(255,255,255,0.6)" : "rgba(255,255,255,0.12)")
-                    : (isActive ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.35)")
+                    ? (hl
+                        ? (isLightBg ? "rgba(0,0,0,0.5)"  : "rgba(255,255,255,0.6)")
+                        : (isLightBg ? "rgba(0,0,0,0.12)" : "rgba(255,255,255,0.12)"))
+                    : (isActive ? strokeActive : strokeNormal)
                   }
                   strokeWidth={hlMap
                     ? (hl ? 1.5 : 0.5)

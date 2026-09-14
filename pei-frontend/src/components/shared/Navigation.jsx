@@ -63,7 +63,7 @@ function DesktopNav({ navigate, currentPage, openModal, user, profile, onAuthCli
                   border:"none",
                   borderLeft:`2px solid ${isActive ? T.amber : "transparent"}`,
                   color: isActive ? T.amber : T.muted,
-                  cursor:"pointer", fontSize:"0.6rem", letterSpacing:"0.05em",
+                  cursor:"pointer", fontSize:"0.95rem", letterSpacing:"0.05em",
                   textTransform:"uppercase", transition:"all 0.15s", textAlign:"left" }}
                 onMouseEnter={e => { if (!isActive) { e.currentTarget.style.color = T.text; }}}
                 onMouseLeave={e => { if (!isActive) { e.currentTarget.style.color = T.muted; }}}>
@@ -77,7 +77,7 @@ function DesktopNav({ navigate, currentPage, openModal, user, profile, onAuthCli
         <div style={{ borderTop:`1px solid ${T.border}`, padding:"0.9rem 1.1rem" }}>
           <button onClick={openModal}
             style={{ width:"100%", background:T.amber, color:"#000", border:"none",
-              padding:"0.5rem", fontSize:"0.56rem", fontWeight:600,
+              padding:"0.5rem", fontSize:"0.92rem", fontWeight:600,
               letterSpacing:"0.1em", textTransform:"uppercase", cursor:"pointer" }}>
             + How do you feel?
           </button>
@@ -136,7 +136,7 @@ function MobileNav({ navigate, currentPage, openModal, user, profile, onAuthClic
                 style={{ flexShrink:0,
                   background: isActive ? `${T.amber}15` : "none",
                   border:`1px solid ${isActive ? T.amber+"60" : "transparent"}`,
-                  fontSize:"0.54rem", letterSpacing:"0.05em",
+                  fontSize:"0.9rem", letterSpacing:"0.05em",
                   textTransform:"uppercase",
                   color: isActive ? T.amber : T.muted,
                   cursor:"pointer", padding:"0.28rem 0.6rem",
@@ -150,7 +150,7 @@ function MobileNav({ navigate, currentPage, openModal, user, profile, onAuthClic
           <button onClick={() => setMenuOpen(v => !v)}
             style={{ flexShrink:0, background:"none",
               border:`1px solid ${menuOpen ? T.border : "transparent"}`,
-              fontSize:"0.54rem", letterSpacing:"0.05em",
+              fontSize:"0.9rem", letterSpacing:"0.05em",
               textTransform:"uppercase", color:T.muted,
               cursor:"pointer", padding:"0.28rem 0.6rem",
               transition:"all 0.2s" }}>
@@ -162,7 +162,7 @@ function MobileNav({ navigate, currentPage, openModal, user, profile, onAuthClic
         <div style={{ display:"flex", alignItems:"center", gap:"0.4rem", flexShrink:0 }}>
           <button onClick={openModal}
             style={{ background:T.amber, color:"#000", border:"none",
-              padding:"0.28rem 0.6rem", fontSize:"0.54rem",
+              padding:"0.28rem 0.6rem", fontSize:"0.9rem",
               fontWeight:600, letterSpacing:"0.06em", cursor:"pointer" }}>+</button>
           <AvatarMenu user={user} profile={profile} navigate={navigate}
             currentPage={currentPage} onAuthClick={onAuthClick} />
@@ -181,7 +181,7 @@ function MobileNav({ navigate, currentPage, openModal, user, profile, onAuthClic
                 background:"none", border:"none",
                 padding:"0.6rem 0",
                 borderBottom:`1px solid ${T.border}`,
-                fontSize:"0.7rem", letterSpacing:"0.05em",
+                fontSize:"0.88rem", letterSpacing:"0.05em",
                 textTransform:"uppercase",
                 color: currentPage === n.id ? T.amber : T.muted,
                 cursor:"pointer" }}>
