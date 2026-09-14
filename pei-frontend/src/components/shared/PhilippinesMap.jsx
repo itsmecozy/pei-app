@@ -208,26 +208,33 @@ export default function PhilippinesMap({
               const pc       = getPC(shape);
               const isActive = popup?.shape?.code === shape.code;
 
-              // Highlights mode: show emotion champions
+              // Theme-aware colors
+              const isLightBg    = T.bg === "#ffffff" || T.bg === "#fafafa";
+              const noDataFill   = isLightBg ? T.text    : "#ffffff";
+              const strokeActive = isLightBg ? "rgba(0,0,0,0.85)"  : "rgba(255,255,255,0.95)";
+              const strokeNormal = isLightBg ? "rgba(0,0,0,0.25)"  : "rgba(255,255,255,0.35)";
+
               const fill = hlMap
-                ? (hl ? hl.hex : "#ffffff")
-                : (pc?.hex || "#ffffff");
+                ? (hl ? hl.hex : noDataFill)
+                : (pc?.hex || noDataFill);
+
               const op = hlMap
                 ? (hl ? 0.75 : 0.08)
                 : pc
-                  ? (isActive ? 1 : 0.6)
-                  : (isActive ? 0.45 : 0.18);
+                  ? (isActive ? 0.9 : 0.55)
+                  : (isActive ? 0.35 : isLightBg ? 0.12 : 0.18);
+
+              const stroke = hlMap
+                ? (hl
+                    ? (isLightBg ? "rgba(0,0,0,0.5)"   : "rgba(255,255,255,0.6)")
+                    : (isLightBg ? "rgba(0,0,0,0.12)"  : "rgba(255,255,255,0.12)"))
+                : (isActive ? strokeActive : strokeNormal);
 
               return (
                 <path key={shape.code} d={shape.d}
                   fill={fill}
                   fillOpacity={op}
-                  stroke={hlMap
-                    ? (hl
-                        ? (isLightBg ? "rgba(0,0,0,0.5)"  : "rgba(255,255,255,0.6)")
-                        : (isLightBg ? "rgba(0,0,0,0.12)" : "rgba(255,255,255,0.12)"))
-                    : (isActive ? strokeActive : strokeNormal)
-                  }
+                  stroke={stroke}
                   strokeWidth={hlMap
                     ? (hl ? 1.5 : 0.5)
                     : (isActive ? 3/zoom : 0.8/zoom)
