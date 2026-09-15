@@ -112,10 +112,6 @@ export default function DashboardPage({ navigate }) {
             {t === "all" ? "ALL TIME" : t.toUpperCase()}
           </button>
         ))}
-        <span style={{ fontFamily:"DM Mono", fontSize:"0.68rem", color:T.muted,
-          display:"flex", alignItems:"center", paddingLeft:"0.25rem" }}>
-          {PERIOD_LABELS[period]}
-        </span>
       </div>
 
       {/* Metric cards */}
