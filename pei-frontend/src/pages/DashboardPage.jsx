@@ -119,35 +119,35 @@ export default function DashboardPage({ navigate }) {
         gridTemplateColumns:bp==="mobile"?"1fr 1fr":"repeat(4,1fr)",
         border:`1px solid ${T.border}`, borderBottom:"none" }}>
         {[
-          { label:"Emotional Stability",  value:national?.esi,
+          { label:"Stability",  value:national?.esi,
             desc:"National ESI",
             color:national?.esi ? esiColor(national.esi) : T.muted },
-          { label:"Hope / Despair Ratio", value:national?.hdr,
+          { label:"Hope Ratio", value:national?.hdr,
             desc:"National HDR",
             color:national?.hdr > 1 ? T.teal : T.rose },
-          { label:"Dominant Emotion",     value:national?.dominant_emotion || null,
+          { label:"Dominant", value:national?.dominant_emotion || null,
             desc:PERIOD_LABELS[period],
             color:EMOTION_MAP[national?.dominant_emotion]?.hex || T.muted },
-          { label:"Total Submissions",    value:national?.submission_count?.toLocaleString(),
+          { label:"Submissions", value:national?.submission_count?.toLocaleString(),
             desc:`${national?.active_lgus || 0} active LGUs`,
             color:T.text },
         ].map((m, i) => (
-          <div key={i} style={{ padding:"1.5rem 1.25rem",
+          <div key={i} style={{ padding:bp==="mobile"?"1rem 0.85rem":"1.5rem 1.25rem",
             borderRight:(bp!=="mobile"&&i<3)||(bp==="mobile"&&i%2===0)?`1px solid ${T.border}`:"none",
             borderBottom:`1px solid ${T.border}`,
             opacity:inView?1:0, transform:inView?"none":"translateY(12px)",
             transition:`all 0.5s ${i*0.08}s` }}>
-            <div style={{ fontFamily:"DM Mono", fontSize:"0.88rem", letterSpacing:"0.14em",
+            <div style={{ fontSize:"0.62rem", letterSpacing:"0.04em",
               textTransform:"uppercase", color:T.muted, marginBottom:"0.5rem" }}>{m.label}</div>
             {loading
               ? <Skeleton height={32} width={80} />
-              : <div style={{ fontFamily:"'Playfair Display',serif",
+              : <div style={{ fontWeight:800,
                   fontSize:bp==="mobile"?"1.6rem":"2rem", fontWeight:700,
                   color:m.color, lineHeight:1, textTransform:"capitalize" }}>
                   {m.value ?? "—"}
                 </div>
             }
-            <div style={{ fontFamily:"DM Mono", fontSize:"0.88rem",
+            <div style={{ fontSize:"0.72rem",
               color:T.muted, marginTop:"0.3rem" }}>{m.desc}</div>
           </div>
         ))}
