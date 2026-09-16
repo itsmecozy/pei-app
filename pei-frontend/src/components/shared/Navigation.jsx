@@ -120,7 +120,7 @@ function MobileNav({ navigate, currentPage, openModal, user, profile, onAuthClic
         padding:"0 1rem", gap:"0.5rem" }}>
 
         {/* Logo */}
-        <span style={{ fontSize:"1.15rem", fontWeight:800, color:T.amber,
+        <span style={{ fontSize:"clamp(1rem, 4vw, 1.15rem)", fontWeight:800, color:T.amber,
           cursor:"pointer", flexShrink:0, letterSpacing:"-0.02em" }}
           onClick={() => navigate("home")}>PEI</span>
 
@@ -128,7 +128,7 @@ function MobileNav({ navigate, currentPage, openModal, user, profile, onAuthClic
           animation:"liveP 2s infinite", display:"inline-block", flexShrink:0 }} />
 
         {/* Primary nav — 3 items only */}
-        <div style={{ display:"flex", alignItems:"center", gap:2, flex:1 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:0, flex:1, minWidth:0, overflow:"hidden" }}>
           {PRIMARY_NAV.map(n => {
             const isActive = currentPage === n.id;
             return (
@@ -158,8 +158,8 @@ function MobileNav({ navigate, currentPage, openModal, user, profile, onAuthClic
           </button>
         </div>
 
-        {/* Right actions */}
-        <div style={{ display:"flex", alignItems:"center", gap:"0.4rem", flexShrink:0 }}>
+        {/* Right actions — never shrink */}
+        <div style={{ display:"flex", alignItems:"center", gap:"0.3rem", flexShrink:0, marginLeft:"auto" }}>
           <button onClick={openModal}
             style={{ background:T.amber, color:"#000", border:"none",
               padding:"0.28rem 0.6rem", fontSize:"0.9rem",
