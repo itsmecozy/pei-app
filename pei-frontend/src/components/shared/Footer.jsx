@@ -5,7 +5,7 @@ function FLink({ label, page, navigate }) {
   const T = useT();
   return (
     <div onClick={() => navigate(page)}
-      style={{ fontFamily:"DM Mono", fontSize:"0.58rem", color:T.muted,
+      style={{ fontSize:"0.58rem", color:T.muted,
         marginBottom:"0.4rem", cursor:"pointer", transition:"color 0.2s" }}
       onMouseEnter={e=>e.target.style.color=T.text}
       onMouseLeave={e=>e.target.style.color=T.muted}>
@@ -26,9 +26,8 @@ export default function Footer({ navigate, openModal }) {
           gap:bp==="mobile"?"2rem":"2.5rem", marginBottom:"2rem" }}>
 
           <div>
-            <div style={{ fontFamily:"'Playfair Display',serif", fontSize:"1.4rem",
-              fontWeight:900, color:T.amber, marginBottom:"0.4rem" }}>PEI</div>
-            <div style={{ fontFamily:"DM Mono", fontSize:"0.58rem", color:T.muted,
+            <div style={{ fontSize:"1.4rem", fontWeight:900, color:T.amber, marginBottom:"0.4rem" }}>PEI</div>
+            <div style={{ fontSize:"0.58rem", color:T.muted,
               lineHeight:1.7, maxWidth:300 }}>
               Philippines Emotional Index — A real-time emotional census powered by voluntary, anonymous submissions.
             </div>
@@ -43,7 +42,7 @@ export default function Footer({ navigate, openModal }) {
           </div>
 
           <div>
-            <div style={{ fontFamily:"DM Mono", fontSize:"0.52rem", letterSpacing:"0.14em",
+            <div style={{ fontSize:"0.52rem", letterSpacing:"0.14em",
               textTransform:"uppercase", color:T.muted, marginBottom:"0.75rem" }}>Pages</div>
             <FLink label="Dashboard"   page="dashboard"   navigate={navigate} />
             <FLink label="City Map"    page="map"         navigate={navigate} />
@@ -54,7 +53,7 @@ export default function Footer({ navigate, openModal }) {
           </div>
 
           <div>
-            <div style={{ fontFamily:"DM Mono", fontSize:"0.52rem", letterSpacing:"0.14em",
+            <div style={{ fontSize:"0.52rem", letterSpacing:"0.14em",
               textTransform:"uppercase", color:T.muted, marginBottom:"0.75rem" }}>Legal</div>
             <FLink label="Privacy Policy"      page="privacy"          navigate={navigate} />
             <FLink label="Anonymity Framework" page="anonymity"        navigate={navigate} />
@@ -63,7 +62,7 @@ export default function Footer({ navigate, openModal }) {
           </div>
 
           <div>
-            <div style={{ fontFamily:"DM Mono", fontSize:"0.52rem", letterSpacing:"0.14em",
+            <div style={{ fontSize:"0.52rem", letterSpacing:"0.14em",
               textTransform:"uppercase", color:T.muted, marginBottom:"0.75rem" }}>Documentation</div>
             <FLink label="API Reference"   page="methodology"     navigate={navigate} />
             <FLink label="Data Access"     page="methodology"     navigate={navigate} />
@@ -75,7 +74,7 @@ export default function Footer({ navigate, openModal }) {
         <div style={{ borderTop:`1px solid ${T.border}`, paddingTop:"1.1rem",
           display:"flex", alignItems:"center", justifyContent:"space-between",
           flexWrap:"wrap", gap:"0.5rem",
-          fontFamily:"DM Mono", fontSize:"0.5rem", color:T.muted }}>
+          fontSize:"0.5rem", color:T.muted }}>
           <span>© {new Date().getFullYear()} Philippines Emotional Index. All insights aggregated. No individuals exposed.</span>
           <span>Pattern survives. Person does not.</span>
         </div>
