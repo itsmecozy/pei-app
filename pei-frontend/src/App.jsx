@@ -14,7 +14,6 @@ import AuthModal       from "./components/shared/AuthModal";
 import PersonalPrompt  from "./components/shared/PersonalPrompt";
 import PricingModal    from "./components/shared/PricingModal";
 import PricingOverlay  from "./components/shared/PricingOverlay";
-import DonateButton    from "./components/shared/DonateButton";
 
 import HomePage      from "./pages/HomePage";
 import DashboardPage from "./pages/DashboardPage";
@@ -135,6 +134,42 @@ export default function App() {
           <Footer navigate={handleNavigate} openModal={openModal} />
         </PageWrapper>
 
+        {/* Floating submit bubble */}
+        <button
+          onClick={openModal}
+          style={{
+            position:"fixed",
+            bottom:"1.5rem",
+            right:"1.25rem",
+            zIndex:190,
+            width:52,
+            height:52,
+            borderRadius:"50%",
+            background:T.amber,
+            border:"none",
+            color:"#000",
+            fontSize:"1.5rem",
+            fontWeight:700,
+            cursor:"pointer",
+            display:"flex",
+            alignItems:"center",
+            justifyContent:"center",
+            boxShadow:`0 4px 20px ${T.amber}55`,
+            transition:"transform 0.2s, box-shadow 0.2s",
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.transform = "scale(1.1)";
+            e.currentTarget.style.boxShadow = `0 6px 28px ${T.amber}88`;
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.transform = "scale(1)";
+            e.currentTarget.style.boxShadow = `0 4px 20px ${T.amber}55`;
+          }}
+          title="How do you feel today?"
+        >
+          +
+        </button>
+
         <SubmissionModal open={modalOpen}   onClose={()=>setModalOpen(false)}   onSuccess={handleSubmitSuccess}
           homeLguId={profile?.home_lgu_id} homeLguName={profile?.home_lgu_name} />
         <AuthModal       open={authOpen}    onClose={()=>setAuthOpen(false)} />
@@ -142,7 +177,6 @@ export default function App() {
           onSignUp={()=>{ setPromptOpen(false); setAuthOpen(true); }}
           onDismiss={()=>setPromptOpen(false)} />
         <PricingModal    open={pricingOpen} onClose={()=>setPricingOpen(false)} />
-        <DonateButton />
       </div>
     </ThemeContext.Provider>
   );
