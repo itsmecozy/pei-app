@@ -158,12 +158,8 @@ function MobileNav({ navigate, currentPage, openModal, user, profile, onAuthClic
           </button>
         </div>
 
-        {/* Right actions — never shrink */}
-        <div style={{ display:"flex", alignItems:"center", gap:"0.3rem", flexShrink:0, marginLeft:"auto" }}>
-          <button onClick={openModal}
-            style={{ background:T.amber, color:"#000", border:"none",
-              padding:"0.28rem 0.6rem", fontSize:"0.9rem",
-              fontWeight:600, letterSpacing:"0.06em", cursor:"pointer" }}>+</button>
+        {/* Right — avatar only, + is the floating bubble */}
+        <div style={{ display:"flex", alignItems:"center", flexShrink:0, marginLeft:"auto" }}>
           <AvatarMenu user={user} profile={profile} navigate={navigate}
             currentPage={currentPage} onAuthClick={onAuthClick} />
         </div>

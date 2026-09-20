@@ -75,8 +75,25 @@ export default function Footer({ navigate, openModal }) {
           display:"flex", alignItems:"center", justifyContent:"space-between",
           flexWrap:"wrap", gap:"0.5rem",
           fontSize:"0.5rem", color:T.muted }}>
-          <span>© {new Date().getFullYear()} Philippines Emotional Index. All insights aggregated. No individuals exposed.</span>
-          <span>Pattern survives. Person does not.</span>
+          <span>© {new Date().getFullYear()} Philippines Emotional Index. No individuals exposed.</span>
+        </div>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
+          flexWrap:"wrap", gap:"0.5rem", marginTop:"0.5rem" }}>
+          <span style={{ fontSize:"0.5rem", color:T.muted, fontStyle:"italic" }}>
+            Pattern survives. Person does not.
+          </span>
+          <button
+            onClick={() => window.open("mailto:support@pei.ph?subject=Donation", "_blank")}
+            style={{ background:"none", border:`1px solid ${T.border}`,
+              color:T.muted, fontSize:"0.55rem", letterSpacing:"0.06em",
+              textTransform:"uppercase", padding:"0.3rem 0.75rem",
+              cursor:"pointer", display:"flex", alignItems:"center", gap:"0.3rem",
+              transition:"all 0.2s" }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = T.rose; e.currentTarget.style.color = T.rose; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.color = T.muted; }}
+          >
+            ♥ Donate
+          </button>
         </div>
       </div>
     </footer>
